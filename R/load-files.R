@@ -10,7 +10,7 @@ rm(list = ls())
 current_path = rstudioapi::getActiveDocumentContext()$path 
 setwd(dirname(current_path))
 setwd('./files')
-path_output <- "C:/Users/LPXJGB/Desktop/CHI-2020/cookingProject/outputs"
+path_output <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs"
 
 # select files in folder
 file.list <- list.files(pattern = "p[0-9]{2}.xlsx", full.names = TRUE)
@@ -87,6 +87,10 @@ for (l in 1:length(df.lists)){
 #create concatenated df of reg and new
 reg.list.concat <- do.call("rbind", reg.list)
 new.list.concat <- do.call("rbind", new.list)
+# add participants corrected (participant + 20 if session equal new)
+reg.list.concat$p_corrected <- reg.list.concat$participant + ifelse(reg.list.concat$session == "new", 20, 0)
+new.list.concat$p_corrected <- new.list.concat$participant + ifelse(new.list.concat$session == "new", 20, 0)
+
 
 #create concatenated df of both reg and new
 reg.list.concat$session <- "reg" #add session column to df 

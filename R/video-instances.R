@@ -19,7 +19,7 @@ most_frequent <- function(session, type){
   ### function starts here
   
   # set items to search
-  n.items <- 20
+  n.items <- 22
   
   # call "item_analysis" function to get the interactions for all items
   items.df <- items_analysis(session)
@@ -36,7 +36,7 @@ most_frequent <- function(session, type){
   this.sort <- this.df[order(-this.df$'int_total'), ]
   
   # keep from data frame only the columns "items" and "int_total"
-  this.selc <- data.frame(this.sort$item, this.sort$int_total, this.sort$type)[1:20,]
+  this.selc <- data.frame(this.sort$item, this.sort$int_total, this.sort$type)[1:n.items,]
   
   # change columns names 
   names(this.selc)[1:3] <- c("item", "int_total", "type")
@@ -76,13 +76,11 @@ get_instances <- function(session, item){
   # set percentage of items to get 
   percent <- 10 # 10 = 10%
   
-  #### set items to search 
-  
   # get type of item
   type.index <- items.list$unique  %>% {which(. == item)}
   type.item <- items.list$type[type.index]
   
-  # get n percent of items
+  # call most_frequent function
   frequent.df <- most_frequent(session, type.item)
 
   # get the index of item of interest from most_frequent df
@@ -140,16 +138,31 @@ get_instances <- function(session, item){
       sel.indxs[sel.counter] <- this.p[random]
       }
     }
-  #select rows within item.df 
+  # select rows within item.df 
   sel.df <- item.df[sel.indxs, ]
+  
+  # add empty row at the end of the data frame 
+  sel.df[nrow(sel.df)+1,] <- as.numeric("")
+  
+  # get vector of non-selected indxs
+  non.indxs <- !(1:total.inst %in% sel.indxs)
+  # select rows not within item.df
+  non.df <- item.df[non.indxs, ]
+  
+  # attached non.df to sel.df
+  sel.df <- bind_rows(sel.df, non.df)
   
   # remove p_corrected column 
   drops <- c("p_corrected")
   sel.df <- sel.df[ , !(names(sel.df) %in% drops)]
   
-  # get data frame based on selected indexes 
+  # make time start and end human readable
   sel.df$start_hms =  as.character(seconds_to_period(sel.df$start))
   sel.df$end_hms =  as.character(seconds_to_period(sel.df$end))
+  
+  # add "place" and "activity" column
+  sel.df$place <- ""
+  sel.df$activity <- ""
   
   # save data frame as .csv
   fileName = paste("/", item, "_", session, ".csv", sep = '')
@@ -160,28 +173,88 @@ get_instances <- function(session, item){
   return(sel.df)
 }
 
-
-
-# ================ [3.0] get n instances of a specific item  ================
-# type list
-types <- c("c", "u")
-# set session
-session <- "both"
-
-# get list of items to search 
-for (type in types){
-  
+# ================ [2.2] loop to call n instances multiple times ================
+call_instances <- function(session, type){
   # call most frequent function
   items.search <- most_frequent(session, type)
   
   # get length of columns item.search
   len.items <- length(items.search$item)
   
-  for (item in 1:len.items){
+  for (i in 1:len.items){
     # call get n instances function using this item as input
-    this.item <- as.vector(items.search$item[item])
+    this.item <- as.vector(items.search$item[i])
+    
+    # print this.item
+    print(this.item)
+    
+    # call get_instances function
     get_instances(session, this.item)
   }
 }
 
+# ================ [3.0] get one instance for each distinct/unique item ================
+instances_unique <- function(item){
+  
+  # select item
+  session <- "both"
+  
+  # check this function has not been called
+  if (exists("unique.df") == FALSE){
+    # call distinct items data frame 
+    unique.df <- items_sessions(session, 3) # 3 method equals to unique
+  }
+  
+  # set session 
+  sessions.raw <- reg.new.concat
+  
+  # select rows from session.list
+  columns <- c("participant", "session", "items", "items_uniq", "order", "start", "end", "p_corrected")
+  # get length of columns
+  len.columns <- length(columns)
+  
+  # columns to keep from data frame
+  to.keep <- names(sessions.raw) %in% columns
+  
+  # keep only relevant columns 
+  sessions.list <- sessions.raw[to.keep]
+  
+  # keep only rows containing the item of interest
+  sessions.list <- sessions.list[sessions.list$items == item, ]
+  
+  # select unique unique/distinct items 
+  unique.list <- unique(sessions.list[c("items_uniq", "items", "p_corrected")])
+  # unique.list <- unique(sessions.list[c("items_uniq", "items", "participant")])
+  
+  unique.rows <- rownames(unique.list)
+  
+  # select data frame according to unique.list row names
+  sessions.sel <-  sessions.list[row.names(sessions.list) %in% unique.rows, ]
+  
+  # remove p_corrected column 
+  drops <- c("p_corrected", "items")
+  sessions.sel <- sessions.sel[, !(names(sessions.sel) %in% drops)]
+  
+  # add order column 
+  sessions.sel$id <- 1:length(sessions.sel$participant)
 
+  # re-order data frame
+  col_order <- c("id", "participant", "session", "items_uniq", "order", "start", "end")
+  
+  # re-order data frame
+  sessions.order <- sessions.sel[, col_order]
+  
+  # make time start and end human readable
+  sessions.order$start_hms <-  as.character(seconds_to_period(sessions.order$start))
+  sessions.order$end_hms =  as.character(seconds_to_period(sessions.order$end))
+  # add "place" and "activity" column
+  sessions.order$type <- ""
+  
+  # save data frame as .csv
+  fileName = paste("/", item, "_", session, "_type", ".csv", sep = '')
+  fileOutput = paste(path_output, fileName, sep = '')
+  write.csv(sessions.order, fileOutput)
+  
+  #return df
+  return(sessions.order)
+}

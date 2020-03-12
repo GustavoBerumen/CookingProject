@@ -7,9 +7,9 @@ items_sessions <- function(session, method){
   # count how many times each times was used for every cooking session
   # returns a data frame object that is arranged like a matrix (e.g items x interactions per participant) 
   
-  # method 1 = interactions
-  # method 2 = duration
-  # method 3 = unique
+    #   method 1 = interactions
+    #   method 2 = duration
+    #   method 3 = unique
   
   # select data 
   if (session == "reg"){
