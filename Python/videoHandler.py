@@ -91,20 +91,25 @@ def createVideos(item, typeItem):
             .resize(0.25)) # resize (keep aspect ratio)
             
         # make output name
-        output_name = output_path + str(i+1) + '_' + item + '_type_' + video_name 
-        
+        if i <9:
+            output_name = output_path + "0" + str(i+1) + '_' + item + '_type_' + video_name 
+        else:
+            output_name = output_path + str(i+1) + '_' + item + '_type_' + video_name 
+            
         # Write the result to a file
         clip.write_videofile(output_name)
         
     return  
       
             
-createVideos('kitchenRoll', 'c_type')  
-      
-# items = ['trashB', 'chopB']
-#     
-# lenItems = len(items)
-#     
-# for i in range(lenItems):
-#    thisItem = items[i]
-#    createVideos(thisItem, 'u')
+#createVideos('water', 'c_type')  
+ 
+items = ["cookingSpoon", "pan", "pot", "bowl", "knife", "spoon", "lid",
+        "towel", "rBook", "phone", "mixingBowl", "colander", "tray", "fork",
+        "computer", "measuringJar", "glassWine", "processor", "tablet"] 
+ 
+lenItems = len(items)
+     
+for i in range(lenItems):
+    thisItem = items[i]
+    createVideos(thisItem, 'u_type')

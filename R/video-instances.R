@@ -195,7 +195,6 @@ call_instances <- function(session, type){
 
 # ================ [3.0] get one instance for each distinct/unique item ================
 instances_unique <- function(item){
-  
   # select item
   session <- "both"
   
@@ -249,6 +248,7 @@ instances_unique <- function(item){
   sessions.order$end_hms =  as.character(seconds_to_period(sessions.order$end))
   # add "place" and "activity" column
   sessions.order$type <- ""
+  sessions.order$comments <- ""
   
   # save data frame as .csv
   fileName = paste("/", item, "_", session, "_type", ".csv", sep = '')

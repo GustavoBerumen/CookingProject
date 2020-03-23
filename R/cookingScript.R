@@ -4470,9 +4470,10 @@ treemap(int.reg.df,
 
 
 ######################. working gantt split --------------------------------
+
+
 session <- "reg"
 #session <- "new"
-# p <- 10
 
 #select session
 if (session == "reg"){
@@ -4547,7 +4548,7 @@ for (p in 1:participants){
 #plot multiple plots in a grid 
 do.call(grid.arrange, pl[1:3])
 
-pl[5]
+pl[1]
 
 
 #test <-     ggplot(p.gantt, aes(time, items, group = order)) + geom_line(size = 3)

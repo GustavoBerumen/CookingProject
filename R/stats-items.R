@@ -101,6 +101,8 @@ items_sessions <- function(session, method){
           item.data <- freqs[f]
         }
         
+        print(item.name)
+        
         # add frequency to item or update value in data frame
         freqs.df[row.pos,  col.pos] <- item.data
       }

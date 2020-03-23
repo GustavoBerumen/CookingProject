@@ -22,28 +22,19 @@ source("./R/process-items.R")
 source("./R/video-instances.R")
 
 
+### test 
+items.long <- c("stove", "oven", "extractorFan", "kettle", "microwave", "coffeeMachine", "riceCooker", "dishWasher",
+               "blender", "speaker", "phone", "tablet", "smartAssistant", "radio")
 
-### show on Friday
-path_test <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs/test/test-trashB.xlsx"
+# compare items.long to items.participants
+items.match <- items.long %in% reg.list[[1]]$items
 
-test <- as.data.frame(read_excel(path_test, sheet = 1, col_names = TRUE, col_types = NULL, na = "", skip = 0))
-
-len.test <- length(test$info)
-
-for (i in 1:len.test){
-  cat("\n", i, ". ", test$info[i], ":", "\n", test$data[i])
-}
-
-
-fileName = paste("/", "_stats_.csv", sep = '')
-fileOutput = paste(path_output, fileName, sep = '')
-write.csv(test, fileOutput)
+# get items.long preesent in a participant 
+items.present <- items.long[items.match]
 
 
 
-
-
-### trying shiny app 
+### shiny app 
 
 library(shiny)
 ui <- fluidPage(sliderInput(inputId = "num",
