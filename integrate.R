@@ -22,16 +22,20 @@ source("./R/process-items.R")
 source("./R/video-instances.R")
 
 
-### test 
 items.long <- c("stove", "oven", "extractorFan", "kettle", "microwave", "coffeeMachine", "riceCooker", "dishWasher",
-               "blender", "speaker", "phone", "tablet", "smartAssistant", "radio")
+                "blender", "speaker", "phone", "tablet", "smartAssistant", "radio", "computer")
 
+
+### test 
+p <- 20
 # compare items.long to items.participants
-items.match <- items.long %in% reg.list[[1]]$items
-
+items.match <- items.long %in% new.list[[p]]$items
 # get items.long preesent in a participant 
 items.present <- items.long[items.match]
-
+p
+items.present
+windows()
+test[p]
 
 
 ### shiny app 

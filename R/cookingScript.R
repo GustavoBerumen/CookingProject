@@ -4471,94 +4471,74 @@ treemap(int.reg.df,
 
 ######################. working gantt split --------------------------------
 
+plot_gantt <- function(session, participant){
 
-session <- "reg"
-#session <- "new"
-
-#select session
-if (session == "reg"){
-  session.list <- reg.list
+  #select session
+  if (session == "reg"){
+    session.list <- reg.list
   }
-if (session == "new"){
-  session.list <- new.list
-  }
-else{
-  stop(sQuote(session), "session should equal to either \"reg\" or \"new\"")
-  }
-
-# create empty list to store plots
-pl <- list()
-
-for (p in 1:participants){
-  #create data frame by selecting specific columns from a particicipant reg.list data frame
-  p.gantt <- session.list[[p]]
-  
-  # get axis position to mark in the plot
-  #plot points/lines 
-  item.indexs <- p.gantt$`items` %>% {which(. == 'garlic')}
-  item.pos <- p.gantt$`start`[item.indexs]
-  
-  #rename columns data frame
-  #names(p.gantt)[names(p.gantt) == "items"] <- "items"
-  #names(p.gantt)[names(p.gantt) == "start"] <- "start"
-  #names(p.gantt)[names(p.gantt) == "end"] <- "end"
-  
-  #get unique items names 
-  p.acts <- unique(p.gantt$items)
-  #get unique items types
-  p.els <- unique(p.gantt$type)
-  
-  # merge content of "start" and "end" columns in a single column, and add an extra column identifying whether they are "start"/"end" 
-  p.gantt <- gather(p.gantt, "state", "time", 5:6) %>% mutate(time = as.numeric(time), items = factor(items, p.acts[length(p.acts):1]), type = factor(type, p.els))
-  
-  #get range 
-  p.min <- min(p.gantt$time)
-  p.max <- max(p.gantt$time)
-  p.range <- c(p.min, p.max)
-  
-  # make type a factor (this will help to fix the order and color of the plot)
-  # p.gantt$type = factor(p.gantt$type, levels = c('c', 'e', 'u')) 
-  p.gantt$type = factor(p.gantt$type, levels = c('c', 'e', 'u')) 
-  
-  #get indexs for horizontal rows of item to be highlighted
-  u.indexs <- p.gantt$type %>% {which(. == "c")}
-  #get unique items on indexs
-  u.items <- unique(p.gantt$items[u.indexs])
-  #get position of item to be highlighted
-  u.pos <- u.items %>% {which(. == "garlic")}
-  if (length(u.pos) == 0){
-    u.pos <- 0
-  } else {
-    u.pos <- length(u.items) - u.pos + 1
+  if (session == "new"){
+    session.list <- new.list
   }
   
-  #dummy variable to store the horizontal indexes to plot line 
-  p.dummy <- data.frame(type = c(c('c', 'e', 'u')), types.pos = c(u.pos, 0, 0))
+  # create empty list to store plots
+  pl <- list()
   
-  # make the plot 
-  pl[[p]] <- 
-    ggplot(p.gantt, aes(time, items, color = type, group = order)) + geom_line(size = 3) +
-    labs(x="time(s)", y=NULL, title = paste("p_", as.character(p), sep = ""), subtitle = recipe.list[ ,2][p]) + # select name of recipe [, 2]-reg and [, 3]-new
-    xlim(p.min, p.max) + 
-    theme(strip.text.y = element_text(angle = 0),  plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
-    facet_grid(rows = vars(type), scales = "free", space = "free") + 
-    geom_vline(xintercept = item.pos, linetype="dotted", color = "black", size=1) +
-    geom_hline(data = p.dummy, aes(yintercept = types.pos), color='coral', size=2, alpha=0.4)
-}  
-#plot multiple plots in a grid 
-do.call(grid.arrange, pl[1:3])
-
-pl[1]
-
-
-#test <-     ggplot(p.gantt, aes(time, items, group = order)) + geom_line(size = 3)
-#plot(test)
-
-
-
-
-
-
+  for (p in 1:participants){
+    #create data frame by selecting specific columns from a particicipant reg.list data frame
+    p.gantt <- session.list[[p]]
+    
+    # get axis position to mark in the plot
+    item.indexs <- p.gantt$`items` %>% {which(. == 'stove')}
+    item.pos <- p.gantt$`start`[item.indexs]
+    
+    #get unique items names 
+    p.acts <- unique(p.gantt$items)
+    #get unique items types
+    p.els <- unique(p.gantt$type)
+    
+    # merge content of "start" and "end" columns in a single column, and add an extra column identifying whether they are "start"/"end" 
+    p.gantt <- gather(p.gantt, "state", "time", 5:6) %>% mutate(time = as.numeric(time), items = factor(items, p.acts[length(p.acts):1]), type = factor(type, p.els))
+    
+    #get range 
+    p.min <- min(p.gantt$time)
+    p.max <- max(p.gantt$time)
+    p.range <- c(p.min, p.max)
+    
+    # make type a factor (this will help to fix the order and color of the plot)
+    p.gantt$type = factor(p.gantt$type, levels = c('c', 'e', 'u')) 
+    
+    #get indexs for horizontal rows of item to be highlighted
+    u.indexs <- p.gantt$type %>% {which(. == "u")}
+    #get unique items on indexs
+    u.items <- unique(p.gantt$items[u.indexs])
+    #get position of item to be highlighted
+    u.pos <- u.items %>% {which(. == "stove")}
+    if (length(u.pos) == 0){
+      u.pos <- 0
+    } else {
+      u.pos <- length(u.items) - u.pos + 1
+    }
+    
+    #dummy variable to store the horizontal indexes to plot line 
+    p.dummy <- data.frame(type = c(c('c', 'e', 'u')), types.pos = c(u.pos, 0, 0))
+    
+    # make the plot 
+    pl[[p]] <- 
+      ggplot(p.gantt, aes(time, items, color = type, group = order)) + geom_line(size = 3) +
+      labs(x="time(s)", y=NULL, title = paste("p_", as.character(p), sep = ""), subtitle = recipe.list[ ,3][p]) + # select name of recipe [, 2]-reg and [, 3]-new
+      xlim(p.min, p.max) + 
+      theme(strip.text.y = element_text(angle = 0),  plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+      facet_grid(rows = vars(type), scales = "free", space = "free") + 
+      geom_vline(xintercept = item.pos, linetype="dotted", color = "black", size=1) +
+      geom_hline(data = p.dummy, aes(yintercept = types.pos), color='coral', size=2, alpha=0.4)
+  }  
+  #plot multiple plots in a grid 
+  do.call(grid.arrange, pl[1:3])
+  
+  pl[participant]
+  return(pl)
+}
 
 # ================ [0 ] load files ================ 
 # clear workspace
