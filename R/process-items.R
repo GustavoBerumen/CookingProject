@@ -216,8 +216,7 @@ items_around <- function(item, session, search){
 }
 
 
-
-# ================ [1.2] items concurrent around according to number of items method================ 
+# ================ [1.0] items concurrent around according to number of items method================ 
 items_around_n <- function(item, session, search){
   # search "bef" = before
   # search "aft" = after
@@ -427,6 +426,12 @@ items_around_n <- function(item, session, search){
 
 # ================ [2.0] find group in items used in combination ================ 
 around_summary <- function(item, session, search, method){
+  # search "bef" = before
+  # search "aft" = after
+  # search "in" in this one
+  
+  # method 1 = search items according to time
+  # method 2 = search items according to number of items
   
   ### get data of items used in combination 
   
@@ -600,9 +605,15 @@ around_summary <- function(item, session, search, method){
   return(freqs)
 }
 
-
-# ================ [3.0] summary of items used in combination combination ================ 
+# ================ [3.0] summary of items used in combination ================ 
 around_summary_ouput <- function(session, search, method){
+  
+  # search "bef" = before
+  # search "aft" = after
+  # search "in" in this one
+  
+  # method 1 = search items according to time
+  # method 2 = search items according to number of items
   
   # select session 
   if ((session == "reg") || (session == "new")){

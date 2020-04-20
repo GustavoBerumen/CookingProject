@@ -1,7 +1,7 @@
 # the function load all the excel files in folder files. The files include participant files for all the cooking session the item files that contain information 
 # about all the cooking sessions 
 
-# ================ [ ] load files ================ 
+# ================ [1.0] load files ================ 
 
 # clear workspace
 rm(list = ls()) 
@@ -15,6 +15,7 @@ path_output <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs"
 # select files in folder
 file.list <- list.files(pattern = "p[0-9]{2}.xlsx", full.names = TRUE)
 file.items <- list.files(pattern = "items.xlsx", full.names = TRUE)
+
 
 # initialize empty df
 reg.list <- vector("list", length(file.list))
@@ -91,13 +92,11 @@ new.list.concat <- do.call("rbind", new.list)
 reg.list.concat$p_corrected <- reg.list.concat$participant + ifelse(reg.list.concat$session == "new", 20, 0)
 new.list.concat$p_corrected <- new.list.concat$participant + ifelse(new.list.concat$session == "new", 20, 0)
 
-
 #create concatenated df of both reg and new
 reg.list.concat$session <- "reg" #add session column to df 
 new.list.concat$session <- "new"
 # merge data frames
 reg.new.concat <- rbind(reg.list.concat,  new.list.concat)
-
 
 #return to working directory
 setwd(dirname(current_path))

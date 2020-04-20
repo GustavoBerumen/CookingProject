@@ -21,12 +21,11 @@ source("./R/process-items.R")
 # get descriptive stats of items
 source("./R/video-instances.R")
 
+### test 
 
 items.long <- c("stove", "oven", "extractorFan", "kettle", "microwave", "coffeeMachine", "riceCooker", "dishWasher",
                 "blender", "speaker", "phone", "tablet", "smartAssistant", "radio", "computer")
 
-
-### test 
 p <- 20
 # compare items.long to items.participants
 items.match <- items.long %in% new.list[[p]]$items
