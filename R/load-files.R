@@ -23,7 +23,7 @@ new.list <- vector("list", length(file.list))
 items.list <- as.data.frame(read_excel(file.items, sheet = "all-items"))
 recipe.list <- as.data.frame(read_excel(file.items, sheet = "recipes"))
 inventory.list <- as.data.frame(read_excel(file.items, sheet = "inventory"))
-time.list <- as.data.frame(read_excel(file.items, sheet = "time"))
+#time.list <- as.data.frame(read_excel(file.items, sheet = "time"))
 participants.list<- as.data.frame(read_excel(file.items, sheet = "participants"))
 
 # assign files to df
@@ -97,6 +97,35 @@ reg.list.concat$session <- "reg" #add session column to df
 new.list.concat$session <- "new"
 # merge data frames
 reg.new.concat <- rbind(reg.list.concat,  new.list.concat)
+
+
+#get time list
+### create data frame to store calculations
+cols.names <-  c("reg", "new") # names of columns 
+time.list <- data.frame()
+for (col in cols.names){time.list[[col]] <- as.numeric()}
+time.list[nrow(time.list)+ participants,] <- NA #add empty NAs
+
+for (s in 1:2){
+  # get data sets
+  if (s == 1){p.list <- reg.list
+  }
+  else{p.list <- new.list
+  }
+  
+  # get time for each participants
+  for (i in 1:participants){
+    #get time 
+    start <- sort(p.list[[i]]$start)[1]
+    end <- (sort(-p.list[[i]]$end)[1]*-1)
+    
+    #get time in seconds
+    time <- round(((end - start)/60), digits=1)
+    
+    #add time to data frame 
+    time.list[i, s] <- time
+  }
+}
 
 #return to working directory
 setwd(dirname(current_path))
