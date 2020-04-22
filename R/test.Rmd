@@ -1,0 +1,87 @@
+---
+title: "Results"
+author: ''
+date: ''
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r load myData, include=FALSE, echo=FALSE}
+load("fname.RData")
+```
+### Participants
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+recipes_df <- recipe.list[, 1:3]
+names(recipes_df)[1:2] <- c("session", "regular")
+
+# required libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+kable(recipes_df, alig = "l", caption = "List of recipes") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+```
+
+
+
+An introduction to results. 
+A description of each one of the results.
+
+### Number of different items used 
+
+The total number of different items used were as follows: 
+
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+total_df<- num.list$n.total
+total_df$session[2] <- "regular"
+
+kable(total_df, alig = "c", caption = "Total number of different items used") %>%
+  kable_styling("striped", full_width = FALSE) %>%
+   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
+```
+
+
+
+Here a description of this section. 
+
+Insert table
+
+Insert figures
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+```
+knitr::kable(
+  mtcars[1:6, 1:6], caption = 'A subset of mtcars.'
+)
+
+Table Header  | Second Header
+------------- | -------------
+Table Cell    | Cell 2
+Cell 3        | Cell 4 
+
+
+To get `knitr` to present the results of a table, add `results="asis"` to the brackets to start the R code chunk. The ensuing output will look like this (though the table may come on the next page).
+
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

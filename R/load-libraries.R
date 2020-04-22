@@ -1,6 +1,6 @@
 # load libraries and functions
 
-# ================ [1.0]install packages ================ 
+# # ================ [1.0]install packages ================ 
 # install.packages("xlsx")
 # install.packages("tidyverse")
 # install.packages("devtools")
@@ -13,6 +13,7 @@
 # install.packages("hash")
 # install.packages("dplyr")
 # install.packages("rstudioapi")
+# install.packages("ggthemes")
 # install.packages("gridExtra")
 # install.packages("reshape2")
 # install.packages("viridis")
@@ -30,11 +31,16 @@
 # install.packages("waffle", dependencies = TRUE)
 # install.packages("hrbrthemes")
 # install.packages("processx")
-# devtools::install_github("hrbrmstr/waffle")
-# install.packages("ggthemes")
+# install.packages("kableExtra")
+# install.packages('rmarkdown')
+# install.packages('tinytex')
+# install.packages("readxl")
+# install.packages("car")
+# install.packages('knitr')
+# install.packages('cgwtools')
 
 # ================ [2.0] load libraries ================ 
-extrafont::loadfonts(device="win")
+library(devtools)
 library(processx)
 library(tidyverse)
 library(readxl)
@@ -65,7 +71,18 @@ library(hrbrthemes)
 library(waffle)
 library(Rttf2pt1)
 library(magrittr)
+library(rmarkdown)
+library(kableExtra)
+library(knitr)
+library(tinytex)
+library(cgwtools)
 
+# hrbrthemes::import_roboto_condensed()
+# devtools::install_github("hrbrmstr/waffle")
+# devtools::install_github("svmiller/stevemisc")
+# devtools::install_github("lbusett/insert_table")
+# extrafont::loadfonts(device="win")
+# tinytex::install_tinytex()  # install TinyTeX
 
 # ================ [3.0]init functions ================ 
 # mode function
@@ -74,3 +91,12 @@ getMode <- function(v){
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
+
+# ================ [4.0]global variables ================ 
+# get unique items 
+types <- c("c", "u", "e")
+len.types <- length(types)
+
+#set sessions 
+sessions<- c("all", "reg", "new")
+len.sessions <- length(sessions)

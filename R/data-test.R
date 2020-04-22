@@ -1,37 +1,107 @@
 # ================ number of items per session ================ 
 
-### number of items - average 
-
-# get unique items 
-types <- c("c", "u", "e")
-
-#alias for data set
-sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
-
-# all types by type of session
-type.list <- sessions.list
-
-#get average
-items.avg <- length(uniq.items[[1]])/ sessions
-#get unique items
-uniq.items <- unique(type.list[c("items", "items_uniq", "p_corrected")])
-#get average
-items.avg <- length(uniq.items[[1]])/ sessions 
-
-#return data
-cat(types[i], items.avg, "\n")
-
-for (i in 1:3){
-  #subset of data frame
-  type.list <- sessions.list[sessions.list$type == types[i], ]
-  #get unique items
-  uniq.items <- unique(type.list[c("items", "items_uniq", "p_corrected")])
-  #get average
-  items.avg <- length(uniq.items[[1]])/ sessions 
+number_items <- function() 
+{
+  ### session x type x participants 
   
-  #return data
-  cat(types[i], items.avg, "\n")
+  # create data frame to store calculations
+  cols.names <- c("session", "c", "u", "e") # names of columns 
+  n.list <- data.frame()
+  for (col in cols.names){n.list[[col]] <- as.numeric()}
+  n.list[nrow(n.list)+ participants,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+    
+    # get data for each participant
+    for (i in 1:participants){
+      
+      #participant data
+      p.list <- sessions.list[sessions.list$participant == i, ]
+      
+      #add session
+      n.list[i, 1] <- i
+      
+      #get data for each type 
+      for (t in 1:len.types){
+        
+        #subset of data frame
+        type.list <- p.list[p.list$type == types[t], ]
+        
+        #get unique items
+        uniq.items <- unique(type.list[c("items", "items_uniq")])
+        
+        #get number of items
+        sum.uniq <- length(uniq.items$items)
+        
+        #add value
+        n.list[i, t+1] <- sum.uniq
+      }
+    }
+    # add df to list 
+    number.lists[[sessions[s]]] <- n.list
+  }
+  
+  ### session x type
+  n.total <- data.frame()
+  cols.names <- c("session", "c", "u", "e", "total") # names of columns 
+  for (col in cols.names){n.total[[col]] <- as.numeric()}
+  n.total[nrow(n.total)+ 3,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+    
+    # get unique items for the entire sessions
+    uniq.all <- unique(sessions.list[c("items", "items_uniq", "p_corrected")])
+    
+    # add type of session
+    n.total[s, 1] <- sessions[s] 
+    
+    # add all items to n.total
+    n.total[s, 5] <- length(uniq.all$items)  
+    
+    #get data for each type 
+    for (t in 1:len.types){
+      
+      #subset of data frame
+      n.type <- sessions.list[sessions.list$type == types[t], ]
+      
+      #get unique items
+      n.items <- unique(n.type[c("items", "items_uniq", "p_corrected")])
+      
+      #get number of items
+      n.sum <- length(n.items$items)
+      
+      #add value
+      n.total[s, t+1] <- n.sum
+    }
+  }
+
+  # put data frame together to return 
+  n.items.ls <- mget(c("n.total", "number.lists"))
+  return(n.items.ls)
 }
+
+num.list <- number_items()
+test.num <- number_items()
 
 # ================ items per recipe -waffle ================ 
 #define output directory
@@ -447,16 +517,14 @@ for (i in 1:3){
 
 # ================ duration of sessions table ================ 
 
-# define cols
-cols <- c("session", "c", "e", "u")
-#set types
-types <- c("c", "e", "u")
+#set sessions 
+sessions<- c("all", "reg", "new")
 
 # list to store df 
 d.lists <- list()
 
 ### create data frame to store calculations
-cols.names <-  cols # names of columns 
+cols.names <- c("session", "c", "e", "u") # names of columns 
 dur.list <- data.frame()
 for (col in cols.names){dur.list[[col]] <- as.numeric()}
 dur.list[nrow(dur.list)+ participants,] <- NA #add empty NAs
@@ -467,16 +535,16 @@ for (type in 1:3){
   if (type == 1){
     #all
     sessions.list <- reg.new.concat
-    this.session <- "all"
+    this.session <- sessions[1]
   }
   else if (type ==2){
     sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
-    this.session <- "reg"
+    this.session <-  sessions[2]
   }
   else if (type ==3){
     #new
     sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
-    this.session <- "new"
+    this.session <-  sessions[3]
   }
 
   # get data for each participant
@@ -492,7 +560,7 @@ for (type in 1:3){
       type.list <- p.list[p.list$type == types[t], ]
       
       #get sum of the time for this type of item
-      sum.dur <- sum(type.list$duration)/60
+      sum.dur <- floor(sum(type.list$duration)/60)
       
       #add data to df 
       dur.list[i, 1] <- i
@@ -501,13 +569,12 @@ for (type in 1:3){
       dur.list[i, t+1] <- sum.dur
     }
   }
-  print(type)
+  print(sessions[type])
   # add df to list 
-  d.lists[[type]] <- dur.list
+  d.lists[[sessions[type]]] <- dur.list
 }
 
 
-sessions <- c("all", "reg", "new")
 windows()
 s <- 3
 df.test <- d.lists[[s]] 
@@ -522,7 +589,7 @@ df.test %>%
   scale_fill_tableau(direction = -2) +
   theme_gdocs() +
   theme(legend.title = element_blank()) +
-  labs(title = "items' total duration of used per recipe",
+  labs(title = "total duration of items usage per session",
        subtitle = paste0(this.session, " sessions")) +
   theme(plot.background=element_blank())
 
