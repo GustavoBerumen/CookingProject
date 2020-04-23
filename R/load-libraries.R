@@ -38,6 +38,7 @@
 # install.packages("car")
 # install.packages('knitr')
 # install.packages('cgwtools')
+# install.packages('gapminder')
 
 # ================ [2.0] load libraries ================ 
 library(devtools)
@@ -76,6 +77,7 @@ library(kableExtra)
 library(knitr)
 library(tinytex)
 library(cgwtools)
+library(gapminder)
 
 # hrbrthemes::import_roboto_condensed()
 # devtools::install_github("hrbrmstr/waffle")

@@ -20,11 +20,12 @@ file.items <- list.files(pattern = "items.xlsx", full.names = TRUE)
 # initialize empty df
 reg.list <- vector("list", length(file.list))
 new.list <- vector("list", length(file.list))
+# load excel sheets
 items.list <- as.data.frame(read_excel(file.items, sheet = "all-items"))
 recipe.list <- as.data.frame(read_excel(file.items, sheet = "recipes"))
 inventory.list <- as.data.frame(read_excel(file.items, sheet = "inventory"))
-#time.list <- as.data.frame(read_excel(file.items, sheet = "time"))
 participants.list<- as.data.frame(read_excel(file.items, sheet = "participants"))
+items.edit <- participants.list<- as.data.frame(read_excel(file.items, sheet = "all-items-edit"))
 
 # assign files to df
 for (i in 1:length(file.list)){
@@ -101,10 +102,11 @@ reg.new.concat <- rbind(reg.list.concat,  new.list.concat)
 
 #get time list
 ### create data frame to store calculations
-cols.names <-  c("reg", "new") # names of columns 
+cols.names <-  c("id", "reg", "new") # names of columns 
 time.list <- data.frame()
 for (col in cols.names){time.list[[col]] <- as.numeric()}
 time.list[nrow(time.list)+ participants,] <- NA #add empty NAs
+time.list[, 1] <- c(1:20)
 
 for (s in 1:2){
   # get data sets
@@ -123,9 +125,12 @@ for (s in 1:2){
     time <- round(((end - start)/60), digits=1)
     
     #add time to data frame 
-    time.list[i, s] <- time
+    time.list[i, s+1] <- time
   }
 }
+
+# round time list
+time.list <- round(time.list)
 
 #return to working directory
 setwd(dirname(current_path))

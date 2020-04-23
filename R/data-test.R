@@ -594,3 +594,26 @@ df.test %>%
   theme(plot.background=element_blank())
 
 
+
+# ================ plot duration times recipes divergent ================ 
+
+# prepare data frame
+time_df <- melt(time.list, id=c("id"))
+
+# change name of columns
+names(time_df) <- c("participant", "session", "duration")
+
+# change name to store
+time_df1 <- time_df
+
+# save data to rData
+resave(time_df1,file='fname.RData')
+
+# change values to negative
+time_df$duration[1:20] <- time_df$duration[1:20]*-1
+
+#change name to store
+time_df2 <- time_df
+
+# save data to rData
+resave(time_df2,file='fname.RData')

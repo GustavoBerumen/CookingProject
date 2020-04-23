@@ -4,34 +4,110 @@ author: ''
 date: ''
 output:
   html_document: default
-  pdf_document: default
   word_document: default
+  pdf_document: default
 ---
 
 ```{r load myData, include=FALSE, echo=FALSE}
 load("fname.RData")
+# required libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
 ```
+An introduction to results. A description of each one of the results.
+
 ### Participants
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+p_df <- participants.list
+
+kable(p_df, alig = "l", caption = "Participants demographics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+```
+
+### Recipes
+
+Add recipe source
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 recipes_df <- recipe.list[, 1:3]
 names(recipes_df)[1:2] <- c("session", "regular")
 
-# required libraries
-library(knitr)
-library(kableExtra)
-library(dplyr)
-
 kable(recipes_df, alig = "l", caption = "List of recipes") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
 ```
 
+### Inventory CPGs
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+inv_df <- inventory.list
+names(inv_df)[1:2] <- c("participant", "number of CPGs")
+
+kable(inv_df, alig = "l", caption = "Inventory CPGs") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+```
+
+### Duration recipes
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+t_df <- time.list
+names(t_df)[1:2] <- c("session", "regular")
+
+kable(t_df, alig = "l", caption = "Duration of recipes") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+```
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+# calculate breaks values
+breaks_values <- c(-120, -60, -30, 0, 30, 60, 120)
+
+## create plot
+ggplot(time_df2, aes(x = participant, y = duration, fill = session)) +
+  geom_hline(yintercept = 0) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  labs(x="participant", y="duration (minutes)", title = "Duration of recipe" ) +
+  scale_y_continuous(breaks = breaks_values,
+                     labels = abs(breaks_values)) +
+  scale_x_continuous(breaks = c(seq(0, 20, by=2)),
+                     labels = c(seq(0, 20, by=2))) +
+  scale_fill_tableau(direction = -2) +
+  theme_gdocs() +
+  theme(plot.title = element_text(size=14)) +
+  theme(plot.background=element_blank())
+```
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+ggplot(time_df1,aes(x=session, y = duration)) + 
+  facet_wrap(~participant) +
+  geom_col(aes(fill = factor(session))) +
+  scale_fill_tableau(direction = -2) +
+  theme_gdocs() +
+  theme(legend.title = element_blank()) +
+  labs(title = "total duration of recipes",
+       subtitle =("all participants")) +
+  ylab("duration(m)") +
+  theme(plot.background=element_blank())
+```
+
+### Items used 
+
+The list of the items used
 
 
-An introduction to results. 
-A description of each one of the results.
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+total_df<- num.list$n.total
+total_df$session[2] <- "regular"
 
-### Number of different items used 
+kable(total_df, alig = "c", caption = "Total number of different items used") %>%
+  kable_styling("striped", full_width = FALSE) %>%
+   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
+```
+
+
+### Total number of different items used 
 
 The total number of different items used were as follows: 
 
@@ -46,35 +122,19 @@ kable(total_df, alig = "c", caption = "Total number of different items used") %>
 ```
 
 
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+c_df <- items.edit
+c_df2 <- cbind(c_df[1:25, ], c_df[26:50, ], c_df[51:75, ])
 
-Here a description of this section. 
+library(htmlTable)
+kable(c_df2, alig = "l", caption = "List of recipes") %>%
+  kable_styling("striped", full_width = FALSE) %>%
+   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
 
-Insert table
-
-Insert figures
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+htmlTable(c_df2,
+          n.cgroup = c(2, 2),
+          rnames = FALSE)
 ```
-
-
-```
-knitr::kable(
-  mtcars[1:6, 1:6], caption = 'A subset of mtcars.'
-)
-
-Table Header  | Second Header
-------------- | -------------
-Table Cell    | Cell 2
-Cell 3        | Cell 4 
-
-
-To get `knitr` to present the results of a table, add `results="asis"` to the brackets to start the R code chunk. The ensuing output will look like this (though the table may come on the next page).
-
-```
-
 
 ## Including Plots
 
@@ -84,4 +144,7 @@ You can also embed plots, for example:
 plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot
+
+
+
