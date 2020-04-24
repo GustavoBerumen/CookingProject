@@ -16,6 +16,8 @@ library(kableExtra)
 library(dplyr)
 library(ggplot2)
 library(ggthemes)
+library(htmlTable)
+options(knitr.kable.NA = '')
 ```
 An introduction to results. A description of each one of the results.
 
@@ -33,7 +35,21 @@ kable(p_df, alig = "l", caption = "Participants demographics") %>%
 Add recipe source
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+source_df <- recipe.list[, c(1,4:7)]
+# rename data frame column
+names(source_df)[names(source_df) == "id"] <- "session"
+
+kable(source_df, alig = "l", caption = "Source of recipes") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+```
+
+### Recipes source
+
+Add recipe source
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 recipes_df <- recipe.list[, 1:3]
+
 names(recipes_df)[1:2] <- c("session", "regular")
 
 kable(recipes_df, alig = "l", caption = "List of recipes") %>%
@@ -59,7 +75,7 @@ kable(t_df, alig = "l", caption = "Duration of recipes") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
 ```
 
-```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+```{r, fig.align='center', layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 # calculate breaks values
 breaks_values <- c(-120, -60, -30, 0, 30, 60, 120)
 
@@ -79,7 +95,7 @@ ggplot(time_df2, aes(x = participant, y = duration, fill = session)) +
   theme(plot.background=element_blank())
 ```
 
-```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+```{r, fig.align='center', layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 ggplot(time_df1,aes(x=session, y = duration)) + 
   facet_wrap(~participant) +
   geom_col(aes(fill = factor(session))) +
@@ -123,28 +139,37 @@ kable(total_df, alig = "c", caption = "Total number of different items used") %>
 
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
-c_df <- items.edit
-c_df2 <- cbind(c_df[1:25, ], c_df[26:50, ], c_df[51:75, ])
 
-library(htmlTable)
-kable(c_df2, alig = "l", caption = "List of recipes") %>%
+c_df <- i.lists$c
+c_dfa <- cbind(c_df[1:51, ], c_df[52:102, ], c_df[103:153, ])
+
+u_df <- i.lists$u
+u_dfa <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
+
+e_df <- i.lists$e
+e_dfa <- cbind(e_df[1:5, ], e_df[6:10, ], e_df[11:15, ])
+
+
+kable(c_dfa, alig = "l", caption = "List of consumer packaged goods") %>%
   kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
+   footnote(symbol = ("sub-cat = sub-category"))  %>%
+   column_spec(c(1, 3, 5), bold = T)
 
-htmlTable(c_df2,
-          n.cgroup = c(2, 2),
-          rnames = FALSE)
+kable(u_dfa, alig = "l", caption = "List of utensils") %>%
+  kable_styling("striped", full_width = FALSE) %>%
+   footnote(symbol = ("sub-cat = sub-category"))  %>%
+   column_spec(c(1, 3, 5), bold = T)
+
+kable(e_dfa, alig = "l", caption = "List of environment") %>%
+  kable_styling("striped", full_width = FALSE) %>%
+   footnote(symbol = ("sub-cat = sub-category"))  %>%
+   column_spec(c(1, 3, 5), bold = T)
 ```
 
-## Including Plots
+## Recipe source
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+options(knitr.kable.NA = '')
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot
-
 
 

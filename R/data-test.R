@@ -617,3 +617,33 @@ time_df2 <- time_df
 
 # save data to rData
 resave(time_df2,file='fname.RData')
+
+
+
+# ================ item list data frame ================ 
+
+# change columns head
+i.list.mod <- items.list[c(1:4)]
+names(i.list.mod)[c(2,4)] <- c("item", "sub-cat")
+
+#filter data
+c.list <- i.list.mod[which(i.list.mod$type == "c"), ]
+#fix c_df indexes 
+rownames(c.list) <- c(1:length(c.list$item))
+
+#filter data
+u.list <- i.list.mod[which(i.list.mod$type == "u"), ]
+rownames(u.list) <- c(1:length(u.list$item))
+
+#filter data
+e.list <- i.list.mod[which(i.list.mod$type == "e"), ]
+rownames(e.list) <- c(1:length(e.list$item))
+
+#add items to a list
+i.lists <- list()
+i.lists[["c"]] <- c.list[c(2,4)]
+i.lists[["u"]] <- u.list[c(2,4)]
+i.lists[["e"]] <- e.list[c(2,4)]
+
+# save data to RData file
+resave(i.lists,file='fname.RData')
