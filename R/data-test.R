@@ -623,8 +623,8 @@ resave(time_df2,file='fname.RData')
 # ================ item list data frame ================ 
 
 # change columns head
-i.list.mod <- items.list[c(1:4)]
-names(i.list.mod)[c(2,4)] <- c("item", "sub-cat")
+i.list.mod <- items.list
+names(i.list.mod)[c(1:3)] <- c("item", "type", "sub-cat")
 
 #filter data
 c.list <- i.list.mod[which(i.list.mod$type == "c"), ]
@@ -641,9 +641,51 @@ rownames(e.list) <- c(1:length(e.list$item))
 
 #add items to a list
 i.lists <- list()
-i.lists[["c"]] <- c.list[c(2,4)]
-i.lists[["u"]] <- u.list[c(2,4)]
-i.lists[["e"]] <- e.list[c(2,4)]
+i.lists[["c"]] <- c.list
+i.lists[["u"]] <- u.list
+i.lists[["e"]] <- e.list
 
-# save data to RData file
-resave(i.lists,file='fname.RData')
+
+# ================ resave/save files ================ 
+# #recipe list
+# resave('recipe.list',file='fname.RData')
+# #participants list
+# resave('participants.list',file='fname.RData')
+# #items list
+# resave('items.list',file='fname.RData')
+# save i.lists [items.list]
+# resave(i.lists,file='fname.RData')
+
+
+# ================ test ================ 
+
+df <- data.frame(
+  id = 1:10,
+  name = c("Bob", "Ashley", "James", "David", "Jenny", 
+           "Hans", "Leo", "John", "Emily", "Lee"), 
+  age = c(48, 47, 40, 28, 29, 29, 27, 27, 31, 30),
+  test1_score = c(18.9, 19.5, 19.6, 12.9, 11.1, 7.3, 4.3, 3.9, 2.5, 1.6),
+  test2_score = c(9.1, 9.1, 9.2, 11.1, 13.9, 14.5, 19.2, 19.3, 19.1, 18.8),
+  stringsAsFactors = FALSE)
+
+library(formattable)
+formattable(df, list(
+  age = color_tile("white", "orange"),
+  test1_score = color_bar("pink"),
+  test2_score = color_bar("pink")
+))
+
+
+
+data <- data.frame(id = 1:10, x = rbinom(10, 100, 0.8))
+
+formattable(data, list(x = formatter("span",
+                                     style = x ~ style(
+                                       display = "block",
+                                       direction = "rtl",
+                                       "border-radius" = "4px",
+                                       "padding-right" = "2px",
+                                       "background-color" = csscolor("lightgray"),
+                                       width = "50px",
+                                       color = csscolor("transparent")
+                                     ))))

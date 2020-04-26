@@ -39,6 +39,7 @@
 # install.packages('knitr')
 # install.packages('cgwtools')
 # install.packages('gapminder')
+# install.packages('formattable')
 
 # ================ [2.0] load libraries ================ 
 library(devtools)
