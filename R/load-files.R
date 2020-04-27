@@ -7,15 +7,17 @@
 rm(list = ls()) 
 
 # set path to file source
-current_path = rstudioapi::getActiveDocumentContext()$path 
-setwd(dirname(current_path))
-setwd('./files')
+home_path = rstudioapi::getActiveDocumentContext()$path 
+
+# set working directory
+setwd("C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/files")
+
+# set path output
 path_output <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs"
 
 # select files in folder
 file.list <- list.files(pattern = "p[0-9]{2}.xlsx", full.names = TRUE)
 file.items <- list.files(pattern = "items.xlsx", full.names = TRUE)
-
 
 # initialize empty df
 reg.list <- vector("list", length(file.list))
@@ -25,7 +27,6 @@ items.list <- as.data.frame(read_excel(file.items, sheet = "all-items"))
 recipe.list <- as.data.frame(read_excel(file.items, sheet = "recipes"))
 inventory.list <- as.data.frame(read_excel(file.items, sheet = "inventory"))
 participants.list<- as.data.frame(read_excel(file.items, sheet = "participants"))
-items.edit <- participants.list<- as.data.frame(read_excel(file.items, sheet = "all-items-edit"))
 
 # assign files to df
 for (i in 1:length(file.list)){
@@ -132,5 +133,15 @@ for (s in 1:2){
 # round time list
 time.list <- round(time.list)
 
+#set sessions 
+sessions <- c("all", "reg", "new")
+# set len.sessions
+len.sessions <- 3
+
+# set len.types
+len.types <- 3
+# set types
+types <- c("c", "u", "e")
+
 #return to working directory
-setwd(dirname(current_path))
+setwd(dirname(home_path))

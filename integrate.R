@@ -1,5 +1,7 @@
 # central organizer of code. It calls functions and perfom data analysis
 
+setwd('C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject')
+
 # clear workspace
 rm(list = ls())
 

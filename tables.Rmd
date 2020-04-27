@@ -3,10 +3,19 @@ title: "Results"
 author: ''
 date: ''
 output:
-  word_document: default
-  pdf_document: default
+  pdf_document:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+    df_print: kable
+    latex_engine: xelatex
   html_document: default
-  always_allow_html: true
+  word_document: default
+header-includes: |
+  ```{=latex}
+  \usepackage{float}
+  \floatplacement{figure}{H}
+  ```
 ---
 
 ```{r load myData, include=FALSE, echo=FALSE}
@@ -21,56 +30,54 @@ library(htmlTable)
 library(scales)
 library(formattable)
 options(knitr.kable.NA = '')
+
 ```
 An introduction to results. A description of each one of the results.
 
 ### Participants
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
-p_df <- participants.list
+p_df <- participants.list[, 1:9]
 
-kable(p_df, alig = "l", caption = "Participants demographics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+kable(p_df, alig = "l", "latex", caption = "Participants demographics", booktabs = T) %>%
+  kable_styling(latex_options ="scale_down")  %>%
+   footnote(symbol = ("Notes. p = participant, coo = country of origin, noi = number of inhabitants, nb = non-binary"))
 ```
 
 ### Recipes
-
-Add recipe source
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 recipes_df <- recipe.list[, 1:3]
 
 names(recipes_df)[1:2] <- c("session", "regular")
 
-kable(recipes_df, alig = "l", caption = "List of recipes") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position"))
 ```
 
 ### Source of recipes
-
-Description of the recipe source
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 source_df <- recipe.list[, c(1,4:7)]
 # rename data frame column
 names(source_df)[names(source_df) == "id"] <- "session"
 
-kable(source_df, alig = "l", caption = "Source of recipes") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+kable(source_df,  "latex", alig = "l", caption = "Source of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
+   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes"))
 ```
 
-
-
 ### Inventory CPGs
+
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 inv_df <- inventory.list
 names(inv_df)[1:2] <- c("participant", "CPGs")
 
-kable(inv_df, alig = "l", caption = "Inventory CPGs") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+kable(inv_df, alig = "l", "latex", caption = "Inventory CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
 ```
 
-```{r, fig.align='center', layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+```{r, fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, tidy = TRUE}
 inv_df <- inventory.list
 names(inv_df)[1:2] <- c("participant", "CPGs")
 breaks_values <- seq(0, 20, by=2) 
@@ -95,69 +102,54 @@ ggplot(inv_df, aes(x=participant, y=CPGs)) +
   geom_text(data = subset(inv_df, CPGs==min(CPGs)), aes(label = CPGs), position = position_stack(1.3), color = "black") +  
   annotate(geom = "text", x = 3, y = -10, label = "min", hjust = "center") +  
   annotate(geom = "text", x = 17, y = -10, label = "max", hjust = "center")
-  
 ```
 
 ### List of items
 
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
-
-c_df <- i.lists$c
+c_df <- i.lists$c[ ,c(1,3)]
 c_dfa <- cbind(c_df[1:51, ], c_df[52:102, ], c_df[103:153, ])
 
-u_df <- i.lists$u
+kable(c_dfa, "latex", alig = "l",  caption = "List of CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+
+u_df <- i.lists$u[ ,c(1,3)]
 u_dfa <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
 
-e_df <- i.lists$e
+kable(u_dfa, "latex", alig = "l",  caption = "List of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+
+e_df <- i.lists$e[ ,c(1,3)]
 e_dfa <- cbind(e_df[1:5, ], e_df[6:10, ], e_df[11:15, ])
 
-
-kable(c_dfa, alig = "l", caption = "List of consumer packaged goods") %>%
-  kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("sub-cat = sub-category"))  %>%
-   column_spec(c(1, 3, 5), bold = T)
-
-kable(u_dfa, alig = "l", caption = "List of utensils") %>%
-  kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("sub-cat = sub-category"))  %>%
-   column_spec(c(1, 3, 5), bold = T)
-
-kable(e_dfa, alig = "l", caption = "List of environment") %>%
-  kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("sub-cat = sub-category"))  %>%
-   column_spec(c(1, 3, 5), bold = T)
+kable(e_dfa, "latex", alig = "l",  caption = "List of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
+
 ### Items by type
+
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 c_dft <- as.data.frame(table(c_df$`sub-cat`))
 names(c_dft) <- c("item", "count")
 c_dft$percent <- round( (c_dft$count/sum(c_dft$count) * 100), digits =1)
 
-formattable(c_dft, caption = "Table. Types of CPGs",
-            align = c("l", "r", "c"),
-            list(
-  percent =color_tile("transparent", "pink")))
-
-
+kable(c_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
 
 u_dft <- as.data.frame(table(u_df$`sub-cat`))
 names(u_dft) <- c("item", "count")
 u_dft$percent <- round((u_dft$count/sum(u_dft$count) * 100), digits =1)
 
-formattable(u_dft, caption = "Table. Types of utensils",
-            align = c("l", "r", "c"),
-            list(
-  percent =color_tile("transparent", "pink")))
+kable(u_dft, "latex", alig = "l",  caption = "Type of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
 
 e_dft <- as.data.frame(table(e_df$`sub-cat`))
 names(e_dft) <- c("item", "count")
 e_dft$percent <- round((e_dft$count/sum(e_dft$count) * 100), digits =1)
 
-formattable(e_dft, caption = "Table. Types of environment",
-            align = c("l", "r", "c"),
-            list(
-  percent =color_tile("transparent", "pink")))
+kable(e_dft, "latex", alig = "l",  caption = "Type of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
 
 ```
 
@@ -167,11 +159,11 @@ formattable(e_dft, caption = "Table. Types of environment",
 t_df <- time.list
 names(t_df)[1:2] <- c("session", "regular")
 
-kable(t_df, alig = "l", caption = "Duration of recipes") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), "striped", full_width = FALSE)
+kable(t_df, "latex", alig = "l", caption = "Duration of recipes", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position"))
 ```
 
-```{r, fig.align='center', layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+```{r, fig.align='center', warning=FALSE, echo=FALSE, message=FALSE,  tidy = TRUE}
 # calculate breaks values
 breaks_values <- c(-120, -60, -30, 0, 30, 60, 120)
 
@@ -212,9 +204,9 @@ The list of the items used
 total_df<- num.list$n.total
 total_df$session[2] <- "regular"
 
-kable(total_df, alig = "c", caption = "Total number of different items used") %>%
-  kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
+kable(total_df, "latex", alig = "l", caption = "Total number of items used in minutes", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
 ```
 
 
@@ -222,12 +214,11 @@ kable(total_df, alig = "c", caption = "Total number of different items used") %>
 
 The total number of different items used were as follows: 
 
-
 ```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
 total_df<- num.list$n.total
-total_df$session[2] <- "regular"
+total_df$session[2] <- "new"
 
-kable(total_df, alig = "c", caption = "Total number of different items used") %>%
-  kable_styling("striped", full_width = FALSE) %>%
-   footnote(symbol = ("c = CPGs, u = utensil, e = environment"))
+kable(total_df, "latex", alig = "l", caption = "Total number of different items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
 ```

@@ -1,0 +1,264 @@
+---
+title: With Latex Header File
+output:
+  pdf_document:
+    fig_caption: yes        
+    includes:  
+      in_header: my_header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load myData, include=FALSE, echo=FALSE}
+load("C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/fname.RData")
+# required libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(htmlTable)
+library(scales)
+library(formattable)
+options(knitr.kable.NA = '')
+
+```
+
+An introduction to results. A description of each one of the results.
+
+### Participants
+
+Here is
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+p_df <- participants.list[, 1:9]
+
+kable(p_df, alig = "l", "latex", caption = "Participants demographics", booktabs = T) %>%
+  kable_styling(latex_options ="scale_down")  %>%
+   footnote(symbol = ("Notes. p = participant, coo = country of origin, noi = number of inhabitants, nb = non-binary"))
+```
+
+### Recipes
+
+Here is
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+recipes_df <- recipe.list[, 1:3]
+
+names(recipes_df)[1:2] <- c("session", "regular")
+
+kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position"))
+```
+
+### Source of recipes
+
+Here is
+
+```{r,  warning=FALSE, echo=FALSE, message=FALSE}
+source_df <- recipe.list[, c(1,4:7)]
+# rename data frame column
+names(source_df)[names(source_df) == "id"] <- "session"
+
+kable(source_df,  "latex", alig = "l", caption = "Source of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
+   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes"))
+```
+
+### Inventory CPGs
+
+Here is a table of Inventory CPGs
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+inv_df <- inventory.list
+names(inv_df)[1:2] <- c("participant", "CPGs")
+
+kable(inv_df, alig = "l", "latex", caption = "Inventory CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+### List of items
+
+Here is a table  
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+items.df <- items.list
+names(items.df)[c(1:3)] <- c("item", "type", "sub-cat")
+
+#filter data
+c.list <- items.df[which(items.df$type == "c"), ]
+#fix c_df indexes 
+rownames(c.list) <- c(1:length(c.list$item))
+#filter data
+u.list <- items.df[which(items.df$type == "u"), ]
+rownames(u.list) <- c(1:length(u.list$item))
+#filter data
+e.list <- items.df[which(items.df$type == "e"), ]
+rownames(e.list) <- c(1:length(e.list$item))
+
+#arrange to print table 
+c_df <- c.list[, c(1,3)]
+c_df <- cbind(c_df[1:51, ], c_df[52:102, ], c_df[103:153, ])
+
+kable(c_df, "latex", alig = "l", caption = "List of CPGs", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("condendsed"), latex_options = c("hold_position", "scale_down"), font_size = 6)
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+u_df <- u.list[, c(1,3)]
+u_df <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
+
+kable(u_df, "latex", alig = "l",  caption = "List of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7)
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+e_df <- e.list[, c(1,3)]
+e_df <- cbind(e_df[1:5, ], e_df[6:10, ], e_df[11:15, ])
+
+kable(e_df, "latex", alig = "l",  caption = "List of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7)
+```
+
+
+### Items by type
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+c_dft <- as.data.frame(table(c.list$`sub-cat`))
+names(c_dft) <- c("item", "count")
+c_dft$percent <- round( (c_dft$count/sum(c_dft$count) * 100), digits =1)
+
+kable(c_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+u_dft <- as.data.frame(table(u.list$`sub-cat`))
+names(u_dft) <- c("item", "count")
+u_dft$percent <- round((u_dft$count/sum(u_dft$count) * 100), digits =1)
+
+kable(u_dft, "latex", alig = "l",  caption = "Type of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+e_dft <- as.data.frame(table(e.list$`sub-cat`))
+names(e_dft) <- c("item", "count")
+e_dft$percent <- round((e_dft$count/sum(e_dft$count) * 100), digits =1)
+
+kable(e_dft, "latex", alig = "l",  caption = "Type of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+### Duration recipes
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+names(time.list)[1:2] <- c("session", "regular")
+
+kable(time.list, "latex", alig = "l", caption = "Duration of recipes", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position"))
+```
+
+### Total unique items used per session
+
+Here
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+uniq_total <- uniq.items.total
+names(uniq_total)[5] <- ("c, u and e")
+
+kable(uniq_total , "latex", alig = "l", caption = "Total unique items used", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("c = CPGs, u = utensils,  e = environment"))
+```
+
+### Average unique items used per session
+
+Here
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+uniq_avg <- uniq.items.total
+names(uniq_avg)[5] <- ("c, u and e")
+
+uniq_avg[1, 2:5] <- round((uniq_avg[1, 2:5]/40), digits=1)
+uniq_avg[2:3, 2:5] <- round((uniq_avg[2:3, 2:5]/20), digits=1)
+
+kable(uniq_avg, "latex", alig = "l", caption = "Average unique items used per session", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("c = CPGs, u = utensils,  e = environment"))
+```
+
+### Total different items used per session 
+
+Here
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+diff_total <- diff.items.total
+names(diff_total)[5] <- ("c, u and e")
+
+kable(diff_total, "latex", alig = "l", caption = "Total different items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
+```
+
+### Average different items used per session 
+
+Here
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+diff_avg <- diff.items.total
+names(diff_avg)[5] <- ("c, u and e")
+
+diff_avg[1, 2:5] <- round((diff_avg[1, 2:5]/40), digits=1)
+diff_avg[2:3, 2:5] <- round((diff_avg[2:3, 2:5]/20), digits=1)
+
+
+kable(diff_avg, "latex", alig = "l", caption = "Average different items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
+```
+
+
+### Duration of used of items per session 
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+dur_total <- dur.items.total
+names(dur_total)[5] <- ("c, u and e")
+
+kable(dur_total, "latex", alig = "l", caption = "Total duration of items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment")) %>%
+   footnote(symbol = ("time in hours"))
+```
+
+
+### Average duration of used of items per session 
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+dur_avg <- dur.items.total
+names(dur_avg)[5] <- ("c, u and e")
+
+
+dur_avg[1, 2:5] <- round((dur_avg[1, 2:5]*1.5), digits=1)
+dur_avg[2:3, 2:5] <- round((dur_avg[2:3, 2:5]*3), digits=1)
+dur_avg[1:3, 5] <- round(dur_avg[1:3, 5]/3, digits=1)
+
+kable(dur_avg, "latex", alig = "l", caption = "Average total duration of items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment")) %>%
+   footnote(symbol = ("time in minutes"))
+```
+
+### Average duration of used of items (individual)
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+dur_ind <- dur.items.individual
+names(dur_ind)[5] <- ("c, u and e")
+
+kable(dur_ind, "latex", alig = "l", caption = "Average duration of used of items individual", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment")) %>%
+   footnote(symbol = ("time in seconds"))
+```
+

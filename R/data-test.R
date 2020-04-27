@@ -1,14 +1,17 @@
-# ================ number of items per session ================ 
-
-number_items <- function() 
+# ================ number of unique items used per session [resave] ================ 
+unique_items_session <- function() 
 {
   ### session x type x participants 
+  ### unique knife_small and knife_large [counted as two unique items]
+  
+  # create n list to add n.df
+  n.list <- list()
   
   # create data frame to store calculations
   cols.names <- c("session", "c", "u", "e") # names of columns 
-  n.list <- data.frame()
-  for (col in cols.names){n.list[[col]] <- as.numeric()}
-  n.list[nrow(n.list)+ participants,] <- NA #add empty NAs
+  n.df <- data.frame()
+  for (col in cols.names){n.df[[col]] <- as.numeric()}
+  n.df[nrow(n.df)+ participants,] <- NA #add empty NAs
   
   #select session
   for (s in 1:len.sessions){
@@ -29,7 +32,7 @@ number_items <- function()
       p.list <- sessions.list[sessions.list$participant == i, ]
       
       #add session
-      n.list[i, 1] <- i
+      n.df[i, 1] <- i
       
       #get data for each type 
       for (t in 1:len.types){
@@ -37,20 +40,26 @@ number_items <- function()
         #subset of data frame
         type.list <- p.list[p.list$type == types[t], ]
         
-        #get unique items
+        #get unique items [data that is added] all different items used per session 
         uniq.items <- unique(type.list[c("items", "items_uniq")])
         
         #get number of items
         sum.uniq <- length(uniq.items$items)
         
         #add value
-        n.list[i, t+1] <- sum.uniq
+        n.df[i, t+1] <- sum.uniq
       }
     }
     # add df to list 
-    number.lists[[sessions[s]]] <- n.list
+    n.list[[sessions[s]]] <- n.df
   }
   
+  return(n.list)
+}
+
+# ================ number of unique items used per session total [resave] ================ 
+unique_items_total <- function() 
+{
   ### session x type
   n.total <- data.frame()
   cols.names <- c("session", "c", "u", "e", "total") # names of columns 
@@ -94,14 +103,216 @@ number_items <- function()
       n.total[s, t+1] <- n.sum
     }
   }
-
-  # put data frame together to return 
-  n.items.ls <- mget(c("n.total", "number.lists"))
-  return(n.items.ls)
+  return(n.total)
 }
 
-num.list <- number_items()
-test.num <- number_items()
+
+
+# ================ number of different items used per session [resave] ================ 
+different_items_session <- function() 
+{
+  ### session x type x participants 
+  ### unique knife_small and knife_large [counted as one different item]
+  
+  # create n list to add n.df
+  n.list <- list()
+  
+  # create data frame to store calculations
+  cols.names <- c("session", "c", "u", "e") # names of columns 
+  n.df <- data.frame()
+  for (col in cols.names){n.df[[col]] <- as.numeric()}
+  n.df[nrow(n.df)+ participants,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+    
+    # get data for each participant
+    for (i in 1:participants){
+      
+      #participant data
+      p.list <- sessions.list[sessions.list$participant == i, ]
+      
+      #add session
+      n.df[i, 1] <- i
+      
+      #get data for each type 
+      for (t in 1:len.types){
+        
+        #subset of data frame
+        type.list <- p.list[p.list$type == types[t], ]
+        
+        #get unique items [data that is added] all different items used per session 
+        uniq.items <- unique(type.list[c("items")])
+        
+        #get number of items
+        sum.uniq <- length(uniq.items$items)
+        
+        #add value
+        n.df[i, t+1] <- sum.uniq
+      }
+    }
+    # add df to list 
+    n.list[[sessions[s]]] <- n.df
+  }
+  
+  return(n.list)
+}
+
+# ================ number of different items used per session total [resave] ================ 
+different_items_total <- function() 
+{
+  ### session x type
+  n.total <- data.frame()
+  cols.names <- c("session", "c", "u", "e", "total") # names of columns 
+  for (col in cols.names){n.total[[col]] <- as.numeric()}
+  n.total[nrow(n.total)+ 3,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+    
+    # get unique items for the entire sessions
+    uniq.all <- unique(sessions.list[c("items", "p_corrected")])
+    
+    # add type of session
+    n.total[s, 1] <- sessions[s] 
+    
+    # add all items to n.total
+    n.total[s, 5] <- length(uniq.all$items)  
+    
+    #get data for each type 
+    for (t in 1:len.types){
+      
+      #subset of data frame
+      n.type <- sessions.list[sessions.list$type == types[t], ]
+      
+      #get unique items
+      n.items <- unique(n.type[c("items", "p_corrected")])
+      
+      #get number of items
+      n.sum <- length(n.items$items)
+      
+      #add value
+      n.total[s, t+1] <- n.sum
+    }
+  }
+  return(n.total)
+}
+
+
+
+
+
+
+
+
+
+
+# ================ duration of use of items per session total [resave] ================ 
+duration_items_total <- function() 
+{
+  ### session x type
+  d.total <- data.frame()
+  cols.names <- c("session", "c", "u", "e", "total") # names of columns 
+  for (col in cols.names){d.total[[col]] <- as.numeric()}
+  d.total[nrow(d.total)+ 3,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+
+    # add type of session
+    d.total[s, 1] <- sessions[s] 
+    
+    # add all items to d.total
+    d.total[s, 5] <- round(sum(sessions.list$duration)/3600, digits=1)
+    
+    #get data for each type 
+    for (t in 1:len.types){
+      
+      #subset of data frame
+      d.type <- sessions.list[sessions.list$type == types[t], ]
+
+      #get number of items
+      d.sum <- round(sum(d.type$duration)/3600, digits=1)
+      
+      #add value
+      d.total[s, t+1] <- d.sum
+    }
+  }
+  return(d.total)
+}
+
+# ================ average duration of use of items individually [resave] ================ 
+duration_items_individual <- function() 
+{
+  ### session x type
+  d.item <- data.frame()
+  cols.names <- c("session", "c", "u", "e", "total") # names of columns 
+  for (col in cols.names){d.item[[col]] <- as.numeric()}
+  d.item[nrow(d.item)+ 3,] <- NA #add empty NAs
+  
+  #select session
+  for (s in 1:len.sessions){
+    #all
+    if (s == 1){sessions.list <- reg.new.concat
+    this.session <- sessions[1]}
+    #reg
+    else if (s ==2){sessions.list <- reg.new.concat[reg.new.concat$session == "reg", ]
+    this.session <-  sessions[2]}
+    #new
+    else if (s ==3){sessions.list <- reg.new.concat[reg.new.concat$session == "new", ]
+    this.session <-  sessions[3]}
+    
+    # add type of session
+    d.item[s, 1] <- sessions[s] 
+    
+    # add all items to d.item
+    d.item[s, 5] <- round(mean(sessions.list$duration), digits=1)
+    
+    #get data for each type 
+    for (t in 1:len.types){
+      
+      #subset of data frame
+      d.type <- sessions.list[sessions.list$type == types[t], ]
+      
+      #get number of items
+      d.sum <- round(mean(d.type$duration), digits =1)
+      
+      #add value
+      d.item[s, t+1] <- d.sum
+    }
+  }
+  return(d.item)
+}
+
+
+
 
 # ================ items per recipe -waffle ================ 
 #define output directory
@@ -620,43 +831,6 @@ resave(time_df2,file='fname.RData')
 
 
 
-# ================ item list data frame ================ 
-
-# change columns head
-i.list.mod <- items.list
-names(i.list.mod)[c(1:3)] <- c("item", "type", "sub-cat")
-
-#filter data
-c.list <- i.list.mod[which(i.list.mod$type == "c"), ]
-#fix c_df indexes 
-rownames(c.list) <- c(1:length(c.list$item))
-
-#filter data
-u.list <- i.list.mod[which(i.list.mod$type == "u"), ]
-rownames(u.list) <- c(1:length(u.list$item))
-
-#filter data
-e.list <- i.list.mod[which(i.list.mod$type == "e"), ]
-rownames(e.list) <- c(1:length(e.list$item))
-
-#add items to a list
-i.lists <- list()
-i.lists[["c"]] <- c.list
-i.lists[["u"]] <- u.list
-i.lists[["e"]] <- e.list
-
-
-# ================ resave/save files ================ 
-# #recipe list
-# resave('recipe.list',file='fname.RData')
-# #participants list
-# resave('participants.list',file='fname.RData')
-# #items list
-# resave('items.list',file='fname.RData')
-# save i.lists [items.list]
-# resave(i.lists,file='fname.RData')
-
-
 # ================ test ================ 
 
 df <- data.frame(
@@ -689,3 +863,64 @@ formattable(data, list(x = formatter("span",
                                        width = "50px",
                                        color = csscolor("transparent")
                                      ))))
+# ================ resave/save files ================ 
+
+# participants.list
+# source(load.libraries/items.xlsx)
+# resave('participants.list',file='fname.RData')
+
+# recipe.list
+# source(load.libraries/items.xlsx)
+# resave('recipe.list',file='fname.RData')
+
+# inventory.list
+# source(load.libraries/items.xlsx)
+# resave('inventory.list',file='fname.RData')
+
+# items.lists
+# source(load.libraries/items.xlsx)
+# resave('items.list',file='fname.RData')
+
+# time.list 
+# source(data-test.R/items.xlsx)
+# resave('time.list',file='fname.RData')
+
+# unique.items.session
+# source(data-test/number of unique items used per session)
+# uniq.items.session <- unique_items_session()
+# resave(uniq.items.session, file='fname.RData')
+
+# unique.items.total
+# source(data-test/number of unique items used per session total)
+# uniq.items.total <- unique_items_total()
+# resave(uniq.items.total, file='fname.RData')
+
+# different.items.session
+# source(data-test/number of different items used per session)
+# diff.items.session <- different_items_session()
+# resave(diff.items.session, file='fname.RData')
+
+# different.items.total
+# source(data-test/number of different items used per session total)
+# diff.items.total <- different_items_total()
+# resave(diff.items.total, file='fname.RData')
+
+# duration.items.total
+# source(data-test/duration of use of items per session total)
+# dur.items.total <- duration_items_total()
+# resave(dur.items.total, file='fname.RData')
+
+# duration.items.total
+# source(data-test/duration of use of items per session total)
+# dur.items.total <- duration_items_total()
+# resave(dur.items.total, file='fname.RData')
+
+# duration.items.individual
+# source(data-test/average duration of use of items individually)
+# dur.items.individual <- duration_items_individual()
+# resave(dur.items.individual, file='fname.RData')
+
+
+
+
+
