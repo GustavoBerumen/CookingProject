@@ -58,13 +58,11 @@ kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T
 Here is
 
 ```{r,  warning=FALSE, echo=FALSE, message=FALSE}
-source_df <- recipe.list[, c(1,4:7)]
-# rename data frame column
-names(source_df)[names(source_df) == "id"] <- "session"
+source_df <- recipe.list[, c(1,4:8)]
 
 kable(source_df,  "latex", alig = "l", caption = "Source of recipes", booktabs = T) %>%
   kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
-   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes"))
+   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes, s. CPGs = suggested number of CPGs ingredients"))
 ```
 
 ### Inventory CPGs
@@ -157,8 +155,17 @@ kable(e_dft, "latex", alig = "l",  caption = "Type of environment items", bookta
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 names(time.list)[1:2] <- c("session", "regular")
 
-kable(time.list, "latex", alig = "l", caption = "Duration of recipes", booktabs = T) %>%
-    kable_styling(latex_options = c("hold_position"))
+kable(time.list, "latex", alig = "l", caption = "Duration of cooking per session", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("Notes. Time in minutes"))
+```
+
+### Comparison recipe vs actual new recipe
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+kable(comp.rec.new, "latex", alig = "l", caption = "Comparison of durations and CPGs (recipe vs actual recipe)", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("Notes. s = suggested in the recipe, Time in minutes"))
 ```
 
 ### Total unique items used per session
@@ -256,9 +263,51 @@ kable(dur_avg, "latex", alig = "l", caption = "Average total duration of items u
 dur_ind <- dur.items.individual
 names(dur_ind)[5] <- ("c, u and e")
 
-kable(dur_ind, "latex", alig = "l", caption = "Average duration of used of items individual", booktabs = T) %>%
+kable(dur_ind, "latex", alig = "l", caption = "Average duration of items used", booktabs = T) %>%
   kable_styling(latex_options = c("hold_position")) %>%
    footnote(symbol = ("c = CPGs, u = utensils, e = environment")) %>%
    footnote(symbol = ("time in seconds"))
 ```
+
+### Total and average used of items by subcategory
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+# get mean duration by category
+count.cat <- reg.new.con.cat %>%
+  dplyr::select(category, duration, type, p_corrected) %>% 
+  dplyr::group_by(category, type, p_corrected) %>% 
+  dplyr::summarise(total = length(category))
+
+# subset c
+count.cat.c <- count.cat[which(count.cat$type=='c'), ]
+# round average time
+count.cat.c[ ,4] <- round(count.cat.c[,4], digits =1)
+ 
+# 
+kable(count.cat.c[, c(1,3:4)], "latex", alig = "l", caption = "Total and average used of items by subcategory", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+
+### Average duration by subcategory 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+# get mean duration by category
+pivot <- reg.new.con.cat %>%
+  dplyr::select(category, duration, type) %>% 
+  dplyr::group_by(category, type) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+
+# subset c
+pivot.c <- pivot[which(pivot$type=='c'), ]
+# round average time
+pivot.c[ ,4] <- round(pivot.c[,4], digits =1)
+
+
+# 
+kable(pivot.c[, c(1,4)], "latex", alig = "l", caption = "Average duration of items used by category", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("time in seconds"))
+```
+
 

@@ -920,7 +920,57 @@ formattable(data, list(x = formatter("span",
 # dur.items.individual <- duration_items_individual()
 # resave(dur.items.individual, file='fname.RData')
 
+# # comp.rec.new
+#  comp_rec_new <- recipe.list[, c(1,7:8)]
+#  diff <- different_items_session()
+#  comp_rec_new$'newtime' <- time.list$new
+#  comp_rec_new$'newCPGs' <- diff$new$c
+#  comp_rec_new$'difftime' <- NA
+#  for (i in 1:20){
+#    if (is.na(comp_rec_new$`s. time`[i]) == FALSE){
+#      comp_rec_new$`difftime`[i] <- comp_rec_new$`newtime`[i] - comp_rec_new$`s. time`[i]}
+#  }
+#  comp_rec_new$'diffCPGs' <- comp_rec_new$`newCPGs` - comp_rec_new$`s. CPGs`
+#  # re-order data frame
+#  col_order <- c("session", "s. CPGs", "newCPGs", "diffCPGs", "s. time", "newtime", "difftime")
+#  comp.rec.new <- comp_rec_new[ ,col_order]
+#  resave(comp.rec.new, file='fname.RData')
 
 
+# # reg.new.con.cat
+# # prepare files
+# items.list.m <-  items.list[, c(1, 3)]
+# names(items.list.m)[1] <- "items"
+# # vlookup like function in t
+# reg.new.con.cat <- (merge(items.list.m, reg.new.concat, by = 'items'))
+# reg.new.con.cat <- reg.new.con.cat[order(reg.new.con.cat$p_corrected, reg.new.con.cat$order),]
+# 
+# resave(reg.new.con.cat, file='fname.RData')
 
+# select only c
+subset.c <- reg.new.con.cat[which(reg.new.con.cat$type=='c'), ]
 
+library(dplyr)
+subset.c <- subset.c %>%
+  dplyr::select(type, duration, p_corrected)
+
+pivot <- subset.c %>%
+  dplyr::select(category, duration, p_corrected) %>% 
+  dplyr::group_by(category) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+
+# good function
+by(subset.c, subset.c$type, summary)
+
+# exploratory analysis
+basic_eda <- function(data)
+{
+  glimpse(data)
+  df_status(data)
+  freq(data) 
+  profiling_num(data)
+  plot_num(data)
+  describe(data)
+}
+
+basic_eda(pivot)

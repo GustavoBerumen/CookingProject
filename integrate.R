@@ -8,8 +8,8 @@ rm(list = ls())
 # load libraries
 source("./R/load-libraries.R")
 
-# load all the data files and assign them to variables
-source("./R/load-files.R")
+# # load all the data files and assign them to variables
+# source("./R/load-files.R")
 
 # get descriptive stats of items
 source("./R/stats-items.R")
