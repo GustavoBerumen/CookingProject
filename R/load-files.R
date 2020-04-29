@@ -143,5 +143,15 @@ len.types <- 3
 # set types
 types <- c("c", "u", "e")
 
+# add categories to reg.new.concat
+items.list.m <-  items.list[, c(1, 3)]
+names(items.list.m)[1] <- "items"
+# vlookup like function in t
+reg.new.con.cat <- (merge(items.list.m, reg.new.concat, by = 'items'))
+reg.new.con.cat <- reg.new.con.cat[order(reg.new.con.cat$p_corrected, reg.new.con.cat$order),]
+#re-order columns
+reg.new.con.cat <- reg.new.con.cat[, c(3, 1,4, 2, 5:9, 11:13, 10)]
+
+
 #return to working directory
 setwd(dirname(home_path))

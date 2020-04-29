@@ -9,7 +9,7 @@ rm(list = ls())
 source("./R/load-libraries.R")
 
 # # load all the data files and assign them to variables
-# source("./R/load-files.R")
+source("./R/load-files.R")
 
 # get descriptive stats of items
 source("./R/stats-items.R")
@@ -22,6 +22,8 @@ source("./R/process-items.R")
 
 # get descriptive stats of items
 source("./R/video-instances.R")
+
+
 
 ### test 
 

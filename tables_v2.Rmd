@@ -1,5 +1,5 @@
 ---
-title: With Latex Header File
+title: Results
 output:
   pdf_document:
     fig_caption: yes        
@@ -28,145 +28,166 @@ options(knitr.kable.NA = '')
 
 An introduction to results. A description of each one of the results.
 
-### Participants
+# Demographics and informative data
 
-Here is
+### Participants
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 p_df <- participants.list[, 1:9]
 
 kable(p_df, alig = "l", "latex", caption = "Participants demographics", booktabs = T) %>%
   kable_styling(latex_options ="scale_down")  %>%
-   footnote(symbol = ("Notes. p = participant, coo = country of origin, noi = number of inhabitants, nb = non-binary"))
+   footnote(general = "p = participant, coo = country of origin, noi = number of inhabitants, nb = non-binary")
 ```
 
 ### Recipes
 
-Here is
-
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 recipes_df <- recipe.list[, 1:3]
 
-names(recipes_df)[1:2] <- c("session", "regular")
+names(recipes_df)[2] <- "regular"
 
 kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T) %>%
-  kable_styling(latex_options = c("scale_down",  "hold_position"))
+  kable_styling(latex_options = c("scale_down",  "hold_position"))  %>%
+  add_header_above(c(" ", "recipe" = 2)) %>%
+   footnote(general = "p = participant")
 ```
 
 ### Source of recipes
 
-Here is
-
 ```{r,  warning=FALSE, echo=FALSE, message=FALSE}
 source_df <- recipe.list[, c(1,4:8)]
 
-kable(source_df,  "latex", alig = "l", caption = "Source of recipes", booktabs = T) %>%
+kable(source_df,  "latex", alig = "l", caption = "Source of new recipes", booktabs = T) %>%
   kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
-   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes, s. CPGs = suggested number of CPGs ingredients"))
+   footnote(general = "p = participant, s.time = sugested cooking time in minutes, s. CPGs = suggested number of CPGs") 
 ```
 
-### Inventory CPGs
-
-Here is a table of Inventory CPGs
+### Inventory of CPGs
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 inv_df <- inventory.list
 names(inv_df)[1:2] <- c("participant", "CPGs")
 
-kable(inv_df, alig = "l", "latex", caption = "Inventory CPGs", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position"))
+inv_df %>%
+mutate_all(linebreak) %>%
+kable( alig = "l", "latex", caption = "Inventory of available cooking related CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+  column_spec(1:2, width = "1.5cm") %>%
+  footnote(general = "Estimation per household.")
+
 ```
 
 ### List of items
 
-Here is a table  
-
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 items.df <- items.list
-names(items.df)[c(1:3)] <- c("item", "type", "sub-cat")
+names(items.df)[c(1:3)] <- c("item", "type", "sub-cat") # fix names
+items.df<- items.df[c(3,1,2)] # reorder columns
 
 #filter data
 c.list <- items.df[which(items.df$type == "c"), ]
-#fix c_df indexes 
-rownames(c.list) <- c(1:length(c.list$item))
+rownames(c.list) <- c(1:length(c.list$item)) #fix c_df indexes 
+
 #filter data
 u.list <- items.df[which(items.df$type == "u"), ]
 rownames(u.list) <- c(1:length(u.list$item))
+
 #filter data
 e.list <- items.df[which(items.df$type == "e"), ]
+e.list <- e.list[order(e.list$'sub-cat'),]
 rownames(e.list) <- c(1:length(e.list$item))
 
 #arrange to print table 
-c_df <- c.list[, c(1,3)]
+c_df <- c.list[, 1:2]
 c_df <- cbind(c_df[1:51, ], c_df[52:102, ], c_df[103:153, ])
 
 kable(c_df, "latex", alig = "l", caption = "List of CPGs", booktabs = T) %>%
-  kable_styling(bootstrap_options = c("condendsed"), latex_options = c("hold_position", "scale_down"), font_size = 6)
+  column_spec(c(1,3,5), bold=T) %>%
+  kable_styling(bootstrap_options = c("condendsed"), latex_options = c("hold_position", "scale_down"), font_size = 7) %>%
+  collapse_rows(columns = c(1:6), latex_hline = "major", valign = "top")
 ```
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-u_df <- u.list[, c(1,3)]
+u_df <- u.list[, 1:2]
 u_df <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
 
 kable(u_df, "latex", alig = "l",  caption = "List of utensils", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7)
+  column_spec(c(1,3,5), bold=T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7) %>%
+  collapse_rows(columns = c(1:6), latex_hline = "major", valign = "top")
 ```
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-e_df <- e.list[, c(1,3)]
+e_df <- e.list[, 1:2]
 e_df <- cbind(e_df[1:5, ], e_df[6:10, ], e_df[11:15, ])
 
 kable(e_df, "latex", alig = "l",  caption = "List of environment items", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7)
+  column_spec(c(1,3,5), bold=T) %>%
+  kable_styling(latex_options = c("hold_position"), font_size = 10) %>%
+  collapse_rows(columns = c(1:6), latex_hline = "major", valign = "top")  
 ```
 
 
-### Items by type
+### Sub-categories of items
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# c data frame
 c_dft <- as.data.frame(table(c.list$`sub-cat`))
 names(c_dft) <- c("item", "count")
 c_dft$percent <- round( (c_dft$count/sum(c_dft$count) * 100), digits =1)
+c_dft$type <- rep("CPGs", length(c_dft$item)) # add type colum
 
-kable(c_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position"))
-```
-
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# u data frame
 u_dft <- as.data.frame(table(u.list$`sub-cat`))
 names(u_dft) <- c("item", "count")
 u_dft$percent <- round((u_dft$count/sum(u_dft$count) * 100), digits =1)
+u_dft$type <- rep("u", length(u_dft$item)) # add type colum
 
-kable(u_dft, "latex", alig = "l",  caption = "Type of utensils", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position"))
-```
-
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# e data frame
 e_dft <- as.data.frame(table(e.list$`sub-cat`))
 names(e_dft) <- c("item", "count")
 e_dft$percent <- round((e_dft$count/sum(e_dft$count) * 100), digits =1)
+e_dft$type <- rep("e", length(e_dft$item)) # add type colum
 
-kable(e_dft, "latex", alig = "l",  caption = "Type of environment items", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position"))
+#merge dataframes
+all_dft <- merge(c_dft, u_dft, all = T)
+all_dft <- merge(all_dft, e_dft, all = T)
+all_dft <- all_dft[c(4, 1, 2, 3)] # reorder columns
+names(all_dft)[c(2,3:4)] <- c("sub-cat", "frequency","percentage (%)") # rename percent
+
+kable(all_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
+  column_spec(1, bold=T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+  collapse_rows(columns = 1:2, latex_hline = "major", valign = "top")  %>%
+   footnote(general = "percentage relative to the item's sub-category type")
 ```
 
-### Duration recipes
+### Duration of cooking sessions
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-names(time.list)[1:2] <- c("session", "regular")
+names(time.list)[1:2] <- c("participant", "regular")
 
 kable(time.list, "latex", alig = "l", caption = "Duration of cooking per session", booktabs = T) %>%
     kable_styling(latex_options = c("hold_position")) %>%
-    footnote(symbol = ("Notes. Time in minutes"))
+    add_header_above(c(" ", "session" = 2)) %>%
+    footnote(general = "Time in minutes")
 ```
 
-### Comparison recipe vs actual new recipe
+### Comparison of duration of cooking (recipe vs new)
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-kable(comp.rec.new, "latex", alig = "l", caption = "Comparison of durations and CPGs (recipe vs actual recipe)", booktabs = T) %>%
+time_comp <- comp.rec.new[, c(1, 5:7)]
+names(time_comp) <- c("p", "s. recipe", "new session", "new - s.")
+
+
+kable(time_comp, "latex", alig = "l", caption = "Comparison of duration of cooking", booktabs = T) %>%
     kable_styling(latex_options = c("hold_position")) %>%
-    footnote(symbol = ("Notes. s = suggested in the recipe, Time in minutes"))
+    add_header_above(c(" ", "cooking time" = 2, "difference")) %>%
+    footnote(general = ("Time in minutes, s. = suggested"))
 ```
+
+# Exploratory data analysis
 
 ### Total unique items used per session
 
@@ -287,27 +308,3 @@ count.cat.c[ ,4] <- round(count.cat.c[,4], digits =1)
 kable(count.cat.c[, c(1,3:4)], "latex", alig = "l", caption = "Total and average used of items by subcategory", booktabs = T) %>%
   kable_styling(latex_options = c("hold_position"))
 ```
-
-
-### Average duration by subcategory 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
-
-# get mean duration by category
-pivot <- reg.new.con.cat %>%
-  dplyr::select(category, duration, type) %>% 
-  dplyr::group_by(category, type) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
-
-# subset c
-pivot.c <- pivot[which(pivot$type=='c'), ]
-# round average time
-pivot.c[ ,4] <- round(pivot.c[,4], digits =1)
-
-
-# 
-kable(pivot.c[, c(1,4)], "latex", alig = "l", caption = "Average duration of items used by category", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position")) %>%
-   footnote(symbol = ("time in seconds"))
-```
-
-
