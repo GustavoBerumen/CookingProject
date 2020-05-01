@@ -941,6 +941,11 @@ formattable(data, list(x = formatter("span",
 
 # select only c
 subset.c <- reg.new.con.cat[which(reg.new.con.cat$type=='c'), ]
+subset.u <- reg.new.con.cat[which(reg.new.con.cat$type=='u'), ]
+subset.e <- reg.new.con.cat[which(reg.new.con.cat$type=='e'), ]
+
+subset.reg <- reg.new.con.cat[which(reg.new.con.cat$session=='reg'), ]
+subset.new <- reg.new.con.cat[which(reg.new.con.cat$session=='new'), ]
 
 library(dplyr)
 subset.c <- subset.c %>%
@@ -951,9 +956,32 @@ pivot <- subset.c %>%
   dplyr::group_by(category) %>% 
   dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
 
-# good function
-by(subset.c, subset.c$type, summary)
+pivot <- subset.c %>%
+  dplyr::select(category, duration, p_corrected) %>% 
+  dplyr::group_by(category) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
 
+pivot <- df %>%
+  dplyr::select(items, p_corrected) %>% 
+  dplyr::group_by(category) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+
+
+pivot <- df %>%
+  dplyr::select(items, items_uniq, category, session, p_corrected, start, end, duration) %>% 
+  dplyr::group_by(p_corrected) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+
+pivot <- subset.c %>%
+  dplyr::select(items, items_uniq, category, session, p_corrected, start, end, duration) %>% 
+  dplyr::group_by(category) %>% 
+  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+
+# good function
+by(df, df$session, summary)
+
+
+library('funModeling')
 # exploratory analysis
 basic_eda <- function(data)
 {
@@ -966,6 +994,10 @@ basic_eda <- function(data)
 }
 
 basic_eda(pivot)
+
+#sd and mean
+libary(psych)
+describe(mydata)
 
 
 collapse_rows_dt <- data.frame(C1 = c(rep("a", 10), rep("b", 5)),
@@ -1015,3 +1047,7 @@ dfc %>%
 
 ggplot(dfc, aes(y = category, x = p_corrected)) +
   geom_point(alpha = .1)
+
+library(lubridate)
+seconds_to_period(86400)
+

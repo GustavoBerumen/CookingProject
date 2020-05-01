@@ -43,13 +43,13 @@ kable(p_df, alig = "l", "latex", caption = "Participants demographics", booktabs
 ### Recipes
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-recipes_df <- recipe.list[, 1:3]
+recipes_df <- recipe.list[, 1:5]
 
-names(recipes_df)[2] <- "regular"
+names(recipes_df)[2:5] <- c("regular", "type", "new", "type")
 
 kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T) %>%
   kable_styling(latex_options = c("scale_down",  "hold_position"))  %>%
-  add_header_above(c(" ", "recipe" = 2)) %>%
+  add_header_above(c(" ", "Session and type" = 4)) %>%
    footnote(general = "p = participant")
 ```
 
@@ -91,6 +91,7 @@ rownames(c.list) <- c(1:length(c.list$item)) #fix c_df indexes
 
 #filter data
 u.list <- items.df[which(items.df$type == "u"), ]
+u.list <- u.list[order(u.list$'sub-cat'),]
 rownames(u.list) <- c(1:length(u.list$item))
 
 #filter data
@@ -115,7 +116,7 @@ u_df <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
 kable(u_df, "latex", alig = "l",  caption = "List of utensils", booktabs = T) %>%
   column_spec(c(1,3,5), bold=T) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7) %>%
-  collapse_rows(columns = c(1:6), latex_hline = "major", valign = "top")
+  collapse_rows(columns = c(1,3,5),  latex_hline = "none", valign = "top")
 ```
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
@@ -288,23 +289,4 @@ kable(dur_ind, "latex", alig = "l", caption = "Average duration of items used", 
   kable_styling(latex_options = c("hold_position")) %>%
    footnote(symbol = ("c = CPGs, u = utensils, e = environment")) %>%
    footnote(symbol = ("time in seconds"))
-```
-
-### Total and average used of items by subcategory
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
-
-# get mean duration by category
-count.cat <- reg.new.con.cat %>%
-  dplyr::select(category, duration, type, p_corrected) %>% 
-  dplyr::group_by(category, type, p_corrected) %>% 
-  dplyr::summarise(total = length(category))
-
-# subset c
-count.cat.c <- count.cat[which(count.cat$type=='c'), ]
-# round average time
-count.cat.c[ ,4] <- round(count.cat.c[,4], digits =1)
- 
-# 
-kable(count.cat.c[, c(1,3:4)], "latex", alig = "l", caption = "Total and average used of items by subcategory", booktabs = T) %>%
-  kable_styling(latex_options = c("hold_position"))
 ```
