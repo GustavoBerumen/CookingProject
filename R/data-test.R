@@ -940,6 +940,7 @@ formattable(data, list(x = formatter("span",
 # resave(reg.new.con.cat, file='fname.RData')
 
 # select only c
+
 subset.c <- reg.new.con.cat[which(reg.new.con.cat$type=='c'), ]
 subset.u <- reg.new.con.cat[which(reg.new.con.cat$type=='u'), ]
 subset.e <- reg.new.con.cat[which(reg.new.con.cat$type=='e'), ]
@@ -948,34 +949,19 @@ subset.reg <- reg.new.con.cat[which(reg.new.con.cat$session=='reg'), ]
 subset.new <- reg.new.con.cat[which(reg.new.con.cat$session=='new'), ]
 
 library(dplyr)
-subset.c <- subset.c %>%
-  dplyr::select(type, duration, p_corrected)
-
-pivot <- subset.c %>%
-  dplyr::select(category, duration, p_corrected) %>% 
-  dplyr::group_by(category) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
-
-pivot <- subset.c %>%
-  dplyr::select(category, duration, p_corrected) %>% 
-  dplyr::group_by(category) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
 
 pivot <- df %>%
-  dplyr::select(items, p_corrected) %>% 
-  dplyr::group_by(category) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
-
-
-pivot <- df %>%
-  dplyr::select(items, items_uniq, category, session, p_corrected, start, end, duration) %>% 
+  dplyr::select(items, items_uniq, session, p_corrected) %>% 
+  filter(session == "reg") %>% 
   dplyr::group_by(p_corrected) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+  dplyr::summarise(unique = n_distinct(items, items_uniq))
 
-pivot <- subset.c %>%
-  dplyr::select(items, items_uniq, category, session, p_corrected, start, end, duration) %>% 
+pivot <- df %>%
+  dplyr::select(items, type, category, p_corrected, type) %>% 
+  filter(type == "e") %>% 
   dplyr::group_by(category) %>% 
-  dplyr::summarise(totalDuration = sum(duration), avgDur = mean(duration), length(category))
+  dplyr::summarise(unique = n_distinct(items))
+
 
 # good function
 by(df, df$session, summary)
@@ -996,7 +982,7 @@ basic_eda <- function(data)
 basic_eda(pivot)
 
 #sd and mean
-libary(psych)
+library(psych)
 describe(mydata)
 
 
@@ -1027,7 +1013,6 @@ p1 <- dfc %>%
   coord_flip() +
   ggtitle("Total count")
 
-
 outliers <- outliers::scores(log(df$duration), type = "iqr", lim = 1.5)
 stem(df$duration[outliers])
 
@@ -1047,7 +1032,3 @@ dfc %>%
 
 ggplot(dfc, aes(y = category, x = p_corrected)) +
   geom_point(alpha = .1)
-
-library(lubridate)
-seconds_to_period(86400)
-

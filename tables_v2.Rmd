@@ -1,10 +1,13 @@
 ---
-title: Results
+title: "Results"
 output:
+  html_document:
+    df_print: paged
   pdf_document:
-    fig_caption: yes        
-    includes:  
+    fig_caption: yes
+    includes:
       in_header: my_header.tex
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
