@@ -1032,3 +1032,13 @@ dfc %>%
 
 ggplot(dfc, aes(y = category, x = p_corrected)) +
   geom_point(alpha = .1)
+
+# compute summary statistics by group
+
+library(dplyr)
+group_by(my_data, group) %>%
+  summarise(
+    count = n(),
+    mean = mean(weight, na.rm = TRUE),
+    sd = sd(weight, na.rm = TRUE)
+  )
