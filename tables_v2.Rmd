@@ -191,4 +191,34 @@ kable(time_comp, "latex", alig = "l", caption = "Comparison of duration of cooki
 
 # Exploratory data analysis
 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+inter.list <- inter.df
 
+kable(inter.list, "latex", alig = "l", caption = "Interactions by by type", booktabs = T, 
+    col.names = c("number","item", "total", "item", "total", "item", "total"))  %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    add_header_above(c(" ", "CPGs" = 2, "utensils" = 2, "environment" = 2)) %>%
+    footnote(general = ("Total number of interactions"))
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+dur.list <- dur.df
+
+kable(dur.list, "latex", alig = "l", caption = "Duration by type", booktabs = T, 
+    col.names = c("number","item", "duration", "item", "duration", "item", "duration"))  %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    add_header_above(c(" ", "CPGs" = 2, "utensils" = 2, "environment" = 2)) %>%
+    footnote(general = ("Duration in seconds"))
+```
+
+\newpage
+\blandscape
+Landscape
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+c.sign <- c.sign.2
+
+kable(c.sign, "latex", alig = "l", caption = "Pairwise Wilcoxon's difference of means total number of interactions", booktabs = T) %>%
+    add_header_above(c(" ", "CPGs subcategories" = 16)) %>%
+    kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7)
+```
+\elandscape
