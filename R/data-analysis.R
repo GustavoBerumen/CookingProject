@@ -1,4 +1,4 @@
-# ================ LOAD LIBRARIES AND DATA SET ================ 
+# ================ 0 LOAD LIBRARIES AND DATA SET ================ 
 ###
 library(dplyr)
 library(psych)
@@ -12,7 +12,7 @@ library(rcompanion)
 # data frame
 df <- reg.new.con.cat
 
-# ================ ALL interactions ================ 
+# ================ 1 ALL interactions ================ 
 
 cat("------------------ ", "sessions")
 
@@ -279,7 +279,7 @@ inter.df <- inter.df %>%
 # save df to fname.RData
 resave('inter.df', file='fname.RData')
 
-# ================ DURATION ================ 
+# ================ 2 DURATION ================ 
 
 cat("------------------ ", "sessions")
 
@@ -320,6 +320,13 @@ pivot <- df %>%
 
 # re-order type 
 pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
+
+
+# anova
+aov.df <- aov(duration ~ type, data = pivot)
+
+# summary of the analysis
+summary(aov.df) 
 
 # check normatlity for anova 
 # a. Homogeneity of variances
@@ -538,7 +545,7 @@ dur.df <- dur.df %>%
 # save df to fname.RData
 resave('dur.df', file='fname.RData')
 
-# ================ FREQUENCY grouping ================ 
+# ================ 3 FREQUENCY grouping ================ 
 
 cat("------------------ ", "all")
 
@@ -846,8 +853,7 @@ top.df <- top.df %>%
 # save df to fname.RData
 # resave('top.df', file='fname.RData')
 
-# ================ FREQUENCY unique ================ 
-
+# ================ 3 FREQUENCY unique ================ 
 cat("------------------ ", "all")
 
 # frequencies items 
@@ -1158,3 +1164,139 @@ top.df <- top.df %>%
 
 # save df to fname.RData
 # resave('top.df', file='fname.RData')
+
+# ================ 4 STAGE OF USE ================ 
+
+# preparation of data [adding relative start position column]
+
+# function to find relative position
+rel_summary <- function(df, seqs){
+  out <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    out[i] <- which.min(abs(seqs - df[i]))
+  }
+  out
+}
+
+# function to get relative position vectors
+rel_positions <- function(df){
+  out <- vector()
+  for (i in seq_along(unique(df$p_corrected))){
+    # select participant
+    pv <- df %>%
+      dplyr::filter(p_corrected == i)
+    # get min and max
+    s_min <- min(pv$start)
+    e_max <- max(pv$end)
+    # create vector of dur_seg
+    seq_vec <- seq(s_min, e_max, length = 101)[2:101]
+    # get rel_postions 
+    rel_pos <- rel_summary(pv$start, seq_vec)
+    # append data to vector 
+    out <- append(out, rel_pos)
+  }
+  out
+}
+
+# add relative position column to data frame 
+dfR <- df
+dfR$start_rel <- rel_positions(df)
+dfR$start_gr <- as.factor(ceiling(dfR$start_rel/25))
+  
+cat("------------------ ", "all")
+
+pivot <- dfR %>%
+  dplyr::group_by(session, participant, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+# sort data frame 
+pivot[order(pivot$session, decreasing = TRUE), ]
+
+# anova
+aov.df <- aov(total ~ start_gr, data = pivot)
+
+# summary of the analysis
+summary(aov.df) 
+
+# check normatlity for anova 
+# a. Homogeneity of variances
+plot(aov.df, 1)
+
+# b. Levene test (if p less than 0.5 ---> violation of assumption)
+leveneTest(total~start_gr, data = pivot)
+
+# c. check for distributions
+ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
+
+# anova assumptions are meet
+compare_means(total ~ start_gr, data = pivot, method = "anova")
+
+# plot
+ggboxplot(pivot, x = "start_gr", y = "total",
+          color = "start_gr", add = "jitter") +
+  stat_compare_means() +                     # Add global p-value
+  ggtitle("start_gr")
+
+# mean and sd 
+pivot %>% dplyr::group_by(start_gr) %>%
+  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+cat("no significant differences")
+
+
+cat("------------------ ", "sessions")
+
+# frequencies start_gr sessions
+pivot <- dfR %>%
+  dplyr::group_by(session, participant, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+# sort data frame 
+pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
+
+# table of frequencies
+table(dfR$session, dfR$start_gr)
+
+# two-way anova 
+res.aov2 <- aov(total ~ session + start_gr, data = pivot)
+summary(res.aov2)
+
+# two-way ANOVA with interaction effect
+res.aov3 <- aov(total ~ session * start_gr, data = pivot)
+summary(res.aov3)
+
+# plot 
+ggboxplot(pivot, x = "start_gr", y = "total", color = "session", add = "jitter") +
+  stat_compare_means() + ggtitle("start_gr")
+
+# mean and sd 
+pivot %>% dplyr::group_by(session, start_gr) %>%
+  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+
+# model summary 
+model.tables(res.aov3, type="means", se = TRUE)
+
+# [a] multiple pairwise comparisons 
+TukeyHSD(res.aov3, which = "session")
+TukeyHSD(res.aov3, which = "start_gr")
+# comparing factors 
+TukeyHSD(res.aov3, which = "session:start_gr")
+
+# [b] 
+summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
+summary(glht(res.aov2, linfct = mcp(session= "Tukey")))
+
+# [c]
+pairwise.t.test(pivot$total, pivot$start_gr, p.adjust.method = "BH")
+
+# check the normality assumption
+
+# normality
+plot(res.aov3, 2)
+
+# extract the residuals
+aov_residuals <- residuals(object = res.aov3)
+
+# run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+cat("no significant differences of interaction")
