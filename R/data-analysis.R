@@ -1,5 +1,6 @@
 # ================ 0 LOAD LIBRARIES AND DATA SET ================ 
-###
+### libraries
+
 library(dplyr)
 library(psych)
 library(multcomp)
@@ -8,6 +9,169 @@ library(yarrr)
 library(FSA)
 library(coin)
 library(rcompanion)
+library(report)
+
+### functions
+
+# function to find relative position
+rel_summary <- function(df, seqs){
+  out <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    out[i] <- which.min(abs(seqs - df[i]))
+  }
+  out
+}
+
+# function to get relative position vectors
+rel_positions <- function(df){
+  out <- vector()
+  for (i in seq_along(unique(df$p_corrected))){
+    # select participant
+    pv <- df %>%
+      dplyr::filter(p_corrected == i)
+    # get min and max
+    s_min <- min(pv$start)
+    e_max <- max(pv$end)
+    # create vector of dur_seg
+    seq_vec <- seq(s_min, e_max, length = 101)[2:101]
+    # get rel_postions 
+    rel_pos <- rel_summary(pv$start, seq_vec)
+    # append data to vector 
+    out <- append(out, rel_pos)
+  }
+  out
+}
+
+### one way anova
+one_anova <- function(pivot, f1, f2){
+  
+  # determine factors 
+  factor1 <- pivot[[f1]] # start_gr
+  factor2 <- pivot[[f2]] # category
+  
+  # summary statistics [to be fixed]
+  pivot %>% 
+    dplyr::group_by(!!rlang::sym(names(.)[f1]), !! rlang::sym(names(.)[f2])) %>% 
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE))
+  
+  # visualize data
+  ggboxplot(pivot, x = names(pivot[f1]), y = "total", color = names(pivot[f1]),  add = "jitter") +
+    stat_compare_means()
+  
+  # one way anova test 
+  res.aov <- aov(total ~ factor1, data = pivot)
+  # aummary of the analysis
+  summary(res.aov)
+  
+  ### multiple pairwise comparisons
+  
+  # [a] using Tukey HSD
+  TukeyHSD(res.aov)
+  
+  # [b] using General Linear Hypothesis
+  summary(glht(res.aov, linfct = mcp(factor1= "Tukey")))
+  
+  # [c] using Pairwise t-test
+  pairwise.t.test(pivot$total, factor1, p.adjust.method = "BH")
+  
+  ### check the normality assumption
+  
+  # [1] homogeneity of variances
+  plot(res.aov, 1)
+  
+  # [1] levene's test
+  leveneTest(total ~ factor1, data = pivot)
+  
+  # relaxing homogeneity
+  # no assumptions of equal variances
+  oneway.test(total ~ factor1, data = pivot)
+  
+  # pairwise t-tests with no assumption of equal variances
+  pairwise.t.test(pivot$total, factor1,
+                  p.adjust.method = "BH", pool.sd = FALSE)
+  
+  # [2] normality
+  plot(res.aov, 2)
+  
+  # [2] extract the residuals
+  aov_residuals <- residuals(object = res.aov)
+  # run Shapiro-Wilk test
+  shapiro.test(x = aov_residuals)
+  
+  ### normality assumptions break
+  
+  # non-parametric alternative to one-way ANOVA test
+  kruskal.test(total ~ factor1, data = pivot)
+  
+  # multiple pairwise-comparison between groups
+  pairwise.wilcox.test(pivot$total, factor1,
+                       p.adjust.method = "BH")
+}
+
+### two way anova
+two_anova <- function(pivot, f1, f2){
+  
+  # determine factors 
+  factor1 <- pivot[[f1]] # start_gr
+  factor2 <- pivot[[f2]] # category
+  
+  # table of frequencies 
+  table(factor2, factor1)
+  table(factor1, factor2)
+  
+  # visualize data
+  ggboxplot(pivot, x = names(pivot[f2]), y = "total", color = names(pivot[f1]),  add = "jitter") +
+    stat_compare_means()
+  
+  # two-way anova test
+  res.aov2 <- aov(total ~ factor1 + factor2, data = pivot)
+  summary(res.aov2)
+  
+  # two-way anova test with interactions
+  res.aov3 <- aov(total ~ factor1 * factor2, data = pivot)
+  summary(res.aov3)
+  
+  # summary statistics [to be fixed]
+  pivot %>% 
+    dplyr::group_by(start_gr, category) %>% 
+    dplyr::summarise(count = length(category), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE))
+  
+  ### multiple pairwise comparisons
+  
+  # [a] using Tukey HSD
+  TukeyHSD(res.aov3, which = "factor1")
+  TukeyHSD(res.aov3, which = "factor2")
+  # comparing factors 
+  TukeyHSD(res.aov3, which = "factor1:factor2")
+  
+  # [b] using General Linear Hypothesis
+  summary(glht(res.aov2, linfct = mcp(factor1= "Tukey")))
+  
+  # [c] using Pairwise t-test
+  pairwise.t.test(pivot$total, factor1, p.adjust.method = "BH")
+  pairwise.t.test(pivot$total, factor2, p.adjust.method = "BH")
+  
+  ### check the normality assumption
+  
+  # [1] homogeneity of variances
+  plot(res.aov3, 1)
+  
+  # [1] levene's test
+  leveneTest(total ~ factor1*factor2, data = pivot)
+  leveneTest(total ~ factor2*factor1, data = pivot)
+  
+  # [2] normality
+  plot(res.aov3, 2)
+  
+  # [2] extract the residuals
+  aov_residuals <- residuals(object = res.aov3)
+  # run Shapiro-Wilk test
+  shapiro.test(x = aov_residuals)
+  
+  ### normality assumptions break
+  
+  # no straigthforward way for two-way anova 
+}
 
 # data frame
 df <- reg.new.con.cat
@@ -1168,41 +1332,12 @@ top.df <- top.df %>%
 # ================ 4 STAGE OF USE ================ 
 
 # preparation of data [adding relative start position column]
-
-# function to find relative position
-rel_summary <- function(df, seqs){
-  out <- vector("double", length(df))
-  for (i in seq_along(df)) {
-    out[i] <- which.min(abs(seqs - df[i]))
-  }
-  out
-}
-
-# function to get relative position vectors
-rel_positions <- function(df){
-  out <- vector()
-  for (i in seq_along(unique(df$p_corrected))){
-    # select participant
-    pv <- df %>%
-      dplyr::filter(p_corrected == i)
-    # get min and max
-    s_min <- min(pv$start)
-    e_max <- max(pv$end)
-    # create vector of dur_seg
-    seq_vec <- seq(s_min, e_max, length = 101)[2:101]
-    # get rel_postions 
-    rel_pos <- rel_summary(pv$start, seq_vec)
-    # append data to vector 
-    out <- append(out, rel_pos)
-  }
-  out
-}
-
 # add relative position column to data frame 
 dfR <- df
 dfR$start_rel <- rel_positions(df)
 dfR$start_gr <- as.factor(ceiling(dfR$start_rel/25))
-  
+
+
 cat("------------------ ", "all")
 
 pivot <- dfR %>%
@@ -1281,7 +1416,7 @@ TukeyHSD(res.aov3, which = "start_gr")
 # comparing factors 
 TukeyHSD(res.aov3, which = "session:start_gr")
 
-# [b] 
+# [b]
 summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
 summary(glht(res.aov2, linfct = mcp(session= "Tukey")))
 
@@ -1300,3 +1435,245 @@ aov_residuals <- residuals(object = res.aov3)
 shapiro.test(x = aov_residuals )
 
 cat("no significant differences of interaction")
+
+cat("------------------ ", "type")
+
+# frequencies start_gr sessions
+
+two_anova_v0 <- function(pivot){
+
+  # two-way anova 
+  res.aov2 <- aov(total ~ type + start_gr, data = pivot)
+  summary(res.aov2)
+  
+  # two-way ANOVA with interaction effect
+  res.aov3 <- aov(total ~ type * start_gr, data = pivot)
+  summary(res.aov3)
+  
+  # plot 
+  ggboxplot(pivot, x = "start_gr", y = "type", color = "type", add = "jitter") +
+    stat_compare_means() + ggtitle("start_gr")
+  
+  # mean and sd 
+  pivot %>% dplyr::group_by(type, start_gr) %>%
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+  
+  # model summary 
+  model.tables(res.aov3, type="means", se = TRUE)
+  
+  # [a] multiple pairwise comparisons 
+  # TukeyHSD(res.aov3, which = "type")
+  TukeyHSD(res.aov3, which = "start_gr")
+  # comparing factors 
+  TukeyHSD(res.aov3, which = "type:start_gr")
+  
+  # [b]
+  summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
+  summary(glht(res.aov2, linfct = mcp(type= "Tukey")))
+  
+  # [c]
+  pairwise.t.test(pivot$total, pivot$start_gr, p.adjust.method = "BH")
+  
+  # check the normality assumption
+  
+  # homogeneity of variances
+  plot(res.aov3, 1)
+  
+  # levene's test
+  leveneTest(total ~ type*start_gr, data = pivot)
+  
+  # normality
+  plot(res.aov3, 2)
+  
+  # extract the residuals
+  aov_residuals <- residuals(object = res.aov3)
+  # run Shapiro-Wilk test
+  shapiro.test(x = aov_residuals )
+  
+  ### normality assumptions break
+  
+  
+  ### anova for unbalanced designs
+  aov.ud <- aov(total ~ type * start_gr, data = pivot)
+  Anova(aov.ud, type = "III")
+  
+  # mean and sd 
+  pivot %>% dplyr::group_by(type, start_gr) %>%
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+}
+
+one_anova_v0 <- function(pivot){
+  
+  # anova
+  aov.df <- aov(total ~ start_gr, data = pivot)
+  
+  # summary of the analysis
+  summary(aov.df)
+  
+  # anova report 
+  aov_results <- aov(total ~ start_gr, data = pivot)
+  report(aov_results)
+  
+  # check normatlity for anova 
+  # a. Homogeneity of variances
+  plot(aov.df, 1)
+  
+  # b. Levene test (if p less than 0.5 ---> violation of assumption)
+  leveneTest(total~start_gr, data = pivot)
+  
+  # c. check for distributions
+  ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
+  
+  # anova assumptions are meet
+  compare_means(total ~ start_gr, data = pivot, method = "anova")
+  
+  ### anova assumptions are not meet 
+  kruskal.test(total ~ start_gr, data = pivot)
+  
+  # find wich pairs are different 
+  pairwise.wilcox.test(pivot$total, pivot$start_gr,
+                       p.adjust.method = "BH")
+  # global test
+  compare_means(total ~ start_gr,  data = pivot)
+  
+  # if significant do a dunn's test 
+  dunnTest(total~start_gr, data = pivot)
+  
+  # anova for unbalanced designs 
+  aov.ud <- aov(len ~ supp * dose, data = pivot)
+  Anova(pivot, type = "III")
+  
+  # plot
+  ggboxplot(pivot, x = "start_gr", y = "total",
+            color = "start_gr", add = "jitter") +
+    stat_compare_means() +                     # Add global p-value
+    ggtitle("start_gr")
+  
+  # mean and sd 
+  pivot %>% dplyr::group_by(start_gr) %>%
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+
+}
+
+# INTERACTIONS - data preparation to use anova
+pivot <- dfR %>%
+  # dplyr::filter(type =="c") %>% # comment for two way anova 
+  dplyr::group_by(type, p_corrected, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr))
+
+# GROUPING - items 
+pivot <- dfR %>%
+  dplyr::distinct(items, type, p_corrected, start_gr) %>% 
+  dplyr::group_by(type, p_corrected, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+# UNIQUE - items 
+pivot <- dfR %>%
+  dplyr::distinct(items, items_uniq, type, p_corrected, start_gr) %>% 
+  dplyr::group_by(type, p_corrected, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+cat("no differences by start_gr")
+
+
+
+cat("------------------ ", "categories")
+### set factors
+f1 <- 3
+f2 <- 1
+
+# INTERACTIONS 
+pivot <- dfR %>%
+  dplyr::filter(type =="c") %>% # comment for two way anova 
+  dplyr::group_by(category, p_corrected, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr))
+
+
+# INTERACTIONS PERCENTAGE
+pivot <- dfR %>%
+  dplyr::group_by(category, p_corrected, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(total = (round(n/sum(n)*100, 0)))
+
+# GROUPING - items 
+pivot <- dfR %>%
+  dplyr::filter(type =="c") %>% 
+  dplyr::distinct(items, type, p_corrected, start_gr) %>% 
+  dplyr::group_by(type, p_corrected, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+# UNIQUE - items 
+pivot <- dfR %>%
+  dplyr::filter(type =="c") %>% 
+  dplyr::distinct(items, items_uniq, type, p_corrected, start_gr) %>% 
+  dplyr::group_by(type, p_corrected, start_gr) %>% 
+  dplyr::summarise(total = length(start_gr))
+
+### anova report [fast report]
+
+# interactions 
+aov_results <- aov(total ~ factor1*factor2, data = pivot)
+report(aov_results)
+
+# factor 1
+aov_results <- aov(total ~ factor1, data = pivot)
+report(aov_results)
+# factor 2
+aov_results <- aov(total ~ factor2, data = pivot)
+report(aov_results)
+
+cat("------------------ ", "data frame most items")
+
+# prepare data
+pivot <- dfR %>%
+  dplyr::group_by(category, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr)) 
+
+pivot <- dfR %>%
+  dplyr::group_by(category, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(per = (round(n/sum(n)*100, 1)))
+
+pivot <- dfR %>%
+  dplyr::filter(items == "oil") %>%
+  dplyr::group_by(p_corrected, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(per = (round(n/sum(n)*100, 1)))
+
+# anova for items
+aov_results <- aov(per ~ start_gr, data = pivot)
+report(aov_results)
+ggplot(pivot, aes(x=per, fill=start_gr)) + geom_density(alpha=.3)
+# plot
+ggboxplot(pivot, x = "start_gr", y = "per",
+          color = "start_gr", add = "jitter") +
+  stat_compare_means() +                     # Add global p-value
+  ggtitle("start_gr")
+
+
+subset.c <- pivot %>% 
+  dplyr::filter(type == "c") %>%
+  dplyr::arrange(desc(total))
+
+subset.u <- pivot %>% 
+  dplyr::filter(type == "u") %>%
+  dplyr::arrange(desc(total))
+
+subset.e <- pivot %>% 
+  dplyr::filter(type == "e") %>%
+  dplyr::arrange(desc(total))
+
+# create data frame 
+cols.names <- c("c", "ctotal", "u", "utotal", "e", "etotal", "item") # names of columns 
+top.df <- data.frame()
+for (col in cols.names){top.df[[col]] <- as.numeric()}
+top.df[nrow(top.df)+ 10,] <- NA #add empty NAs
+
+top.df[, 1:2] <- c(subset.c$items[1:10], subset.c$total[1:10])
+top.df[, 3:4] <- c(subset.u$items[1:10], subset.u$total[1:10])
+top.df[, 5:6] <- c(subset.e$items[1:10], subset.e$total[1:10])
+top.df$item <- c(1:10)
+
+# re-order columns
+top.df <- top.df %>%
+  dplyr::select(item, everything())
