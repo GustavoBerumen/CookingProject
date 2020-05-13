@@ -336,7 +336,6 @@ items_around_n <- function(item, session, search){
             item.start <- session.list[[p]]$`start`[item.pos]
             item.end <- session.list[[p]]$`end`[item.pos]
             
-            
             # get items in interval to exclude
             right.items.excl <- which((session.list[[p]]$`start`) >  item.end)
             left.items.excl <- which((session.list[[p]]$`start`) <  item.start)
@@ -368,45 +367,48 @@ items_around_n <- function(item, session, search){
           # increase instance counter by 1
           instance.counter <- instance.counter + 1
           
-          for (i in 1:len.intv){
-            
-            # increase counter 
-            counter <- counter + 1
-            
-            #row position
-            this.row <- row.pos + i
-            
-            #add distance
-            items.df$distance[this.row] <- rel.pos.vec[i]
-            
-            #add order
-            items.df$order[this.row] <- items.intv$`order`[i]
-            
-            # item name
-            this.item.name <- items.intv$`items`[i]
-            
-            #add item (number)
-            items.df$item_n[this.row] <-  items.list$unique  %>% {which(. == this.item.name)}
-            
-            #add start time
-            items.df$start_time[this.row] <- items.intv$`start`[i]
-            
-            #add end time
-            items.df$end_time[this.row] <- items.intv$`end`[i]
-            
-            #add participant
-            items.df$participant[this.row] <- items.intv$`participant`[i]
-            
-            #add session
-            items.df$session[this.row] <- items.intv$`session`[i]
-            
-            #add instance
-            items.df$instance[this.row] <- instance.counter
-            
-            #add id
-            items.df$id[this.row] <- counter
-            
+          if (len.intv > 0){
+            for (i in 1:len.intv){
+              
+              # increase counter 
+              counter <- counter + 1
+              
+              #row position
+              this.row <- row.pos + i
+              
+              #add distance
+              items.df$distance[this.row] <- rel.pos.vec[i]
+              
+              #add order
+              items.df$order[this.row] <- items.intv$`order`[i]
+              
+              # item name
+              this.item.name <- items.intv$`items`[i]
+              
+              #add item (number)
+              items.df$item_n[this.row] <-  items.list$unique  %>% {which(. == this.item.name)}
+              
+              #add start time
+              items.df$start_time[this.row] <- items.intv$`start`[i]
+              
+              #add end time
+              items.df$end_time[this.row] <- items.intv$`end`[i]
+              
+              #add participant
+              items.df$participant[this.row] <- items.intv$`participant`[i]
+              
+              #add session
+              items.df$session[this.row] <- items.intv$`session`[i]
+              
+              #add instance
+              items.df$instance[this.row] <- instance.counter
+              
+              #add id
+              items.df$id[this.row] <- counter
+              
+            }
           }
+          
           # update row position
           row.pos <- row.pos + len.intv
         }
@@ -429,7 +431,7 @@ around_summary <- function(item, session, search, method){
   # search "bef" = before
   # search "aft" = after
   # search "in" in this one
-  
+
   # method 1 = search items according to time
   # method 2 = search items according to number of items
   
@@ -453,7 +455,7 @@ around_summary <- function(item, session, search, method){
   intervals.vector <- unique(items.filter$instance)
   
   # get data frame of items name and number
-  items.data <- data.frame(items.list$number, items.list$unique)
+  items.data <- data.frame(seq_along(items.list$unique), items.list$unique)
   # change cols name of data frame
   colnames(items.data) <- c("number", "item")
   
@@ -604,8 +606,7 @@ around_summary <- function(item, session, search, method){
   # return data frame
   return(freqs)
 }
-
-# ================ [3.0] summary of items used in combination ================ 
+# ================ [3.1] summary of items used in combination [pairs] ================ 
 around_summary_ouput <- function(session, search, method){
   
   # search "bef" = before
@@ -627,7 +628,7 @@ around_summary_ouput <- function(session, search, method){
   }
   
   # call the items_analysis
-  summary.df <- items_analysis(session)
+  summary.df <- items_analysis(session) # to get total number of interactions [could be done with dplyr]
   
   ### create data frame to store data, this data frame will be returned 
   
@@ -641,9 +642,113 @@ around_summary_ouput <- function(session, search, method){
   combs <-3
   
   # names of data frame columns of values to compute
-  if(search == "in"){  columns <- c("item", "set1", "set2", "set3", "set4", "set5", "set6")
+  if(search == "in"){columns <- c("item", "set1", "set2", "set3", "set4", "set5", "set6")
   }
   else{columns <- c("item", "set1_a", "set1_b", "set2_a", "set2_b", "set3_a", "set3_b")
+  }
+  # get length of columns
+  len.columns <- length(columns)
+  
+  # data frame is initialized
+  stats.df <- data.frame()
+  for (columns in columns){stats.df[[columns]] <- as.numeric()}
+  stats.df[nrow(stats.df) + len.items.names,] <- NA # add empty NAs
+  stats.df[, 1] <- items.names # add items names
+  
+  # add values to data frame 
+  for (i in 1:len.items.names){
+    
+    # get current item
+    this.item <- items.list$unique[i]
+
+    # get number of interactions of current item
+    this.int <- summary.df[i, 3] # colum number 3 contains total number of interactions 
+    
+    # check number of interaction for current item greater than threshold
+    if (this.int >= threshold){
+      
+      cat(this.item, "\n")
+
+      # call function around_summary to get data frame of combined items for current item
+      combs.df <- around_summary(this.item, session, search, method)
+      
+      # check "search" and select data frame
+      if (search == "in"){
+        
+        # get length of combs.df 
+        len.combs <- length(combs.df$Freq)
+        
+        if (len.combs >= 6){
+          # select double combinations data frame
+          sel.combs <- as.matrix(combs.df[1:(combs*2), ]) # get top three doubles
+          # add items to data frame 
+          stats.df[i, 2:7] <- as.vector(sel.combs[1:6, 3])
+        }
+        else{
+          sel.combs <- as.matrix(combs.df[1:len.combs, ]) # get top three doubles
+          # add items to data frame 
+          stats.df[i, 2:len.combs] <- as.vector(sel.combs[1:len.combs, 3])
+        }
+      }
+      else{ # [bef and aft]
+        
+        # select double combinations data frame
+        sel.combs <- as.matrix(combs.df$double.freqs[1:combs, ])  # get top three doubles
+                                                                  # here to change to single
+        
+        
+        # add items to data frame
+        for (c in 1:combs){
+          # get d combination from around summary df 
+          stats.df[i, (c+c)] <- sel.combs[c, 4] # column 4 equals to "item_name_1" 
+          stats.df[i, (c+c+1)] <- sel.combs[c, 5] # column 5 equals to "item_name_2"
+        }
+      }
+    }
+  }
+  # return data frame
+  return(stats.df)
+}
+
+# ================ [3.2] summary of items used in combination [singles] ================ 
+around_summary_singles <- function(session, search, method){
+  
+  # search "bef" = before
+  # search "aft" = after
+  # search "in" in this one
+  
+  # method 1 = search items according to time
+  # method 2 = search items according to number of items
+  
+  # select session 
+  if ((session == "reg") || (session == "new")){
+    len.session <- 1
+  }
+  else if (session == "both"){
+    len.session <- 2
+  }
+  else{
+    stop(sQuote(session), " Wrong input: session should equal to either \"reg\" (regular) or \"new\" (new) or \"both\" (regular and new)")
+  }
+  
+  # call the items_analysis
+  summary.df <- items_analysis(session) # to get total number of interactions [could be done with dplyr]
+  
+  ### create data frame to store data, this data frame will be returned 
+  
+  # set cooking sessions
+  sessions <- participants * len.session
+  
+  # set number of interaction to determine wheter or not to get items around
+  threshold <- 1
+  
+  # set number of combinations to get # number of items to select 
+  combs <- 4
+  
+  # names of data frame columns of values to compute
+  if(search == "in"){columns <- c("item", "set1", "set2", "set3", "set4", "set5", "set6")
+  }
+  else{columns <- columns <- c("item", "set1", "set2", "set3", "set4", "set5", "set6")
   }
   # get length of columns
   len.columns <- length(columns)
@@ -668,7 +773,7 @@ around_summary_ouput <- function(session, search, method){
       
       cat(this.item, "\n")
       
-      # call function around_summary to get data frame of combined items for current item
+      ### call function around_summary to get data frame of combined items for current item
       combs.df <- around_summary(this.item, session, search, method)
       
       # check "search" and select data frame
@@ -689,16 +794,17 @@ around_summary_ouput <- function(session, search, method){
           stats.df[i, 2:len.combs] <- as.vector(sel.combs[1:len.combs, 3])
         }
       }
-      else{
+      else{ ### search == "bef" or search == "aft"
         
         # select double combinations data frame
-        sel.combs <- as.matrix(combs.df$double.freqs[1:combs, ]) # get top three doubles
+        # sel.combs <- as.matrix(combs.df$double.freqs[1:combs, ])  # get top three doubles
+        # here to change to single
+        sel.combs <- as.matrix(combs.df$single.freqs[1:combs, ])  # get top three doubles [#4 the number of items to select]
         
         # add items to data frame
         for (c in 1:combs){
           # get d combination from around summary df 
-          stats.df[i, (c+c)] <- sel.combs[c, 4] # column 4 equals to "item_name_1" 
-          stats.df[i, (c+c+1)] <- sel.combs[c, 5] # column 5 equals to "item_name_2"
+          stats.df[i, c+1] <- sel.combs[c, 1] 
         }
       }
     }
