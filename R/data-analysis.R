@@ -1754,7 +1754,8 @@ bef.summ <- around_summary_ouput("both", "bef", 2)
 dur.summ <- around_summary_ouput("both", "in", 2)
 aft.summ <- around_summary_ouput("both", "aft", 2)
 
-# save those in data frame 
+# load  data files from RData
+
 
 test <- bef$items.intv
 
@@ -1764,3 +1765,6 @@ pivot <- test %>%
   dplyr::summarise(count = n())
 
 # ================ 5 ITEMS SEQUENCE / ITEMS AROUND [BEFORE] ================ 
+
+
+View(in.summ)

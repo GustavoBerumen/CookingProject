@@ -510,9 +510,18 @@ around_summary <- function(item, session, search, method){
   ### the analysis starts here
   
   ### singles
+
+  if (length(items.filter$item_n) == 1){
+    items.freqs <- data.frame("Var1" = items.filter$item_n, "Freq" = 1)
+  }
+  else if (length(items.filter$item_n) == 0){
+    items.freqs <- data.frame("Var1" = NA, "Freq" = NA)
+    }
+  else{
+    # get table of frequencies 
+    items.freqs <- as.data.frame(sort(table(items.filter$item_n), decreasing = TRUE))
+  }
   
-  # get table of frequencies 
-  items.freqs <- as.data.frame(sort(table(items.filter$item_n), decreasing = TRUE))
   # change name of data frame
   names(items.freqs)[names(items.freqs) == "Var1"] <- "item_n"
   
@@ -636,7 +645,7 @@ around_summary_ouput <- function(session, search, method){
   sessions <- participants * len.session
   
   # set number of interaction to determine wheter or not to get items around
-  threshold <- 10
+  threshold <- 2
   
   # set number of combinations to get
   combs <-3
@@ -686,8 +695,10 @@ around_summary_ouput <- function(session, search, method){
         }
         else{
           sel.combs <- as.matrix(combs.df[1:len.combs, ]) # get top three doubles
+          
+          
           # add items to data frame 
-          stats.df[i, 2:len.combs] <- as.vector(sel.combs[1:len.combs, 3])
+          stats.df[i, 2:(1+len.combs)] <- as.vector(sel.combs[1:len.combs, 3])
         }
       }
       else{ # [bef and aft]
@@ -695,8 +706,6 @@ around_summary_ouput <- function(session, search, method){
         # select double combinations data frame
         sel.combs <- as.matrix(combs.df$double.freqs[1:combs, ])  # get top three doubles
                                                                   # here to change to single
-        
-        
         # add items to data frame
         for (c in 1:combs){
           # get d combination from around summary df 
@@ -791,7 +800,7 @@ around_summary_singles <- function(session, search, method){
         else{
           sel.combs <- as.matrix(combs.df[1:len.combs, ]) # get top three doubles
           # add items to data frame 
-          stats.df[i, 2:len.combs] <- as.vector(sel.combs[1:len.combs, 3])
+          stats.df[i, 2:(2+len.combs-1)] <- as.vector(sel.combs[1:len.combs, 3])
         }
       }
       else{ ### search == "bef" or search == "aft"
@@ -800,11 +809,10 @@ around_summary_singles <- function(session, search, method){
         # sel.combs <- as.matrix(combs.df$double.freqs[1:combs, ])  # get top three doubles
         # here to change to single
         sel.combs <- as.matrix(combs.df$single.freqs[1:combs, ])  # get top three doubles [#4 the number of items to select]
-        
         # add items to data frame
         for (c in 1:combs){
           # get d combination from around summary df 
-          stats.df[i, c+1] <- sel.combs[c, 1] 
+          stats.df[i, c+1] <- sel.combs[c, 3] 
         }
       }
     }
