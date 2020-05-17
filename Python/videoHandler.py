@@ -6,17 +6,16 @@ import numpy as np
 import moviepy
 from moviepy.editor import *
 
-def createVideos(item, typeItem):
+def createVideos( item, typeItem ):
     
-    # set max duration video 
-    # maxDur = 12
+    #defines the max duration of the videos
     maxDur = 10
     
     item = str(item)
     
-    # set the name of csv file 
-    this_csv = item + '_both_type.csv'
-    # this_csv = item + '_both_type.csv'
+    #set the name of csv file 
+    #this_csv = item + '_both_type.csv'
+    this_csv = item + '_both.csv'
     
     # path of folder containing the videos to a variable
     videos_path  = 'C://Users//LPXJGB//Desktop//PC_CookingStudy//'
@@ -92,17 +91,17 @@ def createVideos(item, typeItem):
             
         # make output name
         if i <9:
-            output_name = output_path + "0" + str(i+1) + '_' + item + '_type_' + video_name 
+            output_name = output_path + "0" + str(i+1) + '_' + item + video_name 
         else:
             output_name = output_path + str(i+1) + '_' + item + '_type_' + video_name 
             
         # Write the result to a file
         clip.write_videofile(output_name)
         
-    return  
+    return
       
             
-#createVideos('water', 'c_type')  
+createVideos('food', 'c')  
  
 items = ["cookingSpoon", "pan", "pot", "bowl", "knife", "spoon", "lid",
         "towel", "rBook", "phone", "mixingBowl", "colander", "tray", "fork",

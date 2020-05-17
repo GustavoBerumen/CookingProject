@@ -1766,5 +1766,32 @@ pivot <- test %>%
 
 # ================ 5 ITEMS SEQUENCE / ITEMS AROUND [BEFORE] ================ 
 
+# ================ 6 PLACES ================ 
+# create a table of frequencies
 
-View(in.summ)
+
+# prepare data
+dfP <- as.data.frame(table(places.list$item, places.list$place))
+names(dfP)[1:3] <- c("item", "place", "count")
+
+# get table of percentages 
+pivot <-  places.list %>%
+  dplyr::group_by(item, place) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = (ceiling(n / sum(n)*100))) %>%
+  dplyr::arrange(item, desc(freq))
+
+
+
+# ================ 7 CONSUMPTION ================
+# prepare data frame
+pivot <- df %>%
+  dplyr::select(items, items_uniq, p_corrected) %>% 
+  dplyr::group_by(items, items_uniq) %>% 
+  dplyr::summarise(total = length(items))
+
+
+
+# ================ 8 NETWORKS ================
+# ================ 9 SITUATIONS [PROBLEMS AND REMARKABLE] ================ 
+# ================ 10 PEOPLE'S OBSERVATION ================ 
