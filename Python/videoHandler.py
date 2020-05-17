@@ -6,17 +6,16 @@ import numpy as np
 import moviepy
 from moviepy.editor import *
 
-def createVideos(item, typeItem):
+def createVideos( item, typeItem ):
     
-    # set max duration video 
-    # maxDur = 12
-    maxDur = 10
+    #defines the max duration of the videos
+    maxDur = 6
     
     item = str(item)
     
-    # set the name of csv file 
-    this_csv = item + '_both_type.csv'
-    # this_csv = item + '_both_type.csv'
+    #set the name of csv file 
+    #this_csv = item + '_both_type.csv'
+    this_csv = item + '_both.csv'
     
     # path of folder containing the videos to a variable
     videos_path  = 'C://Users//LPXJGB//Desktop//PC_CookingStudy//'
@@ -47,10 +46,10 @@ def createVideos(item, typeItem):
                 'end'])
                 
     # find position of row with NA // this is the numbers of videos that will be created it 
-    # index = int((list(map(tuple, np.where(np.isnan(csv_data.participant)))))[0][0])
+    index = int((list(map(tuple, np.where(np.isnan(csv_data.participant)))))[0][0])
 
     # get length of a column // this is the numbers of videos that will be created it     
-    index = len(csv_data.participant)
+    # index = len(csv_data.participant)
     
     
     # iterate over csv data to create videos
@@ -92,24 +91,20 @@ def createVideos(item, typeItem):
             
         # make output name
         if i <9:
-            output_name = output_path + "0" + str(i+1) + '_' + item + '_type_' + video_name 
+            output_name = output_path + "0" + str(i+1) + '_' + item + '_' + video_name 
         else:
-            output_name = output_path + str(i+1) + '_' + item + '_type_' + video_name 
+            output_name = output_path + str(i+1) + '_' + item + '_' + video_name 
             
         # Write the result to a file
         clip.write_videofile(output_name)
         
-    return  
+       
+    return
       
-            
-#createVideos('water', 'c_type')  
- 
-items = ["cookingSpoon", "pan", "pot", "bowl", "knife", "spoon", "lid",
-        "towel", "rBook", "phone", "mixingBowl", "colander", "tray", "fork",
-        "computer", "measuringJar", "glassWine", "processor", "tablet"] 
+items = ["plate", "container"] 
  
 lenItems = len(items)
      
 for i in range(lenItems):
     thisItem = items[i]
-    createVideos(thisItem, 'u_type')
+    createVideos(thisItem, 'u')

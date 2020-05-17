@@ -10,6 +10,8 @@ library(FSA)
 library(coin)
 library(rcompanion)
 library(report)
+library(data.table)
+
 
 ### functions
 
@@ -1766,5 +1768,67 @@ pivot <- test %>%
 
 # ================ 5 ITEMS SEQUENCE / ITEMS AROUND [BEFORE] ================ 
 
+# ================ 6 PLACES ================ 
 
-View(in.summ)
+### create a matrix of frequencies
+
+# prepare data
+df.p <- as.data.frame(table(places.list$item, places.list$place))
+names(df.p)[1:3] <- c("item", "place", "count")
+
+# create a matrix
+mt.p <- dcast(places.list, item~place)
+
+# get percentage
+cols.mtP <- length(mtP)
+for (i in seq_along(mtP$item)){
+  mtP[i, 2:cols.mtP] <- round((mtP[i, 2:cols.mtP]/sum(mtP[i, 2:cols.mtP])*100), digits = 0)}
+
+# get type list
+types <-  places.list %>%
+  dplyr::group_by(type, item) %>%
+  dplyr::distinct(type, items)
+
+# add column to data frame 
+df.places <- cbind(types[1], mtP)
+
+### summary statistics
+
+### get table of percentages 
+pivot <-  places.list %>%
+  dplyr::distinct(item, place, type) %>%
+  dplyr::group_by(type, item) %>%
+  dplyr::count(item)
+
+# get means by type
+pivot %>%
+  dplyr::group_by(type) %>%
+  dplyr::summarise(avg = mean(n))
+
+
+
+
+
+# get table of percentages 
+pivot <-  places.list %>%
+  dplyr::group_by(place) %>%
+  dplyr::summarise(avg = mean(n))
+
+# get means by type
+pivot %>%
+  dplyr::group_by(place) %>%
+  dplyr::summarise(avg = mean(n))
+
+
+# ================ 7 CONSUMPTION ================
+# prepare data frame
+pivot <- df %>%
+  dplyr::select(items, items_uniq, p_corrected) %>% 
+  dplyr::group_by(items, items_uniq) %>% 
+  dplyr::summarise(total = length(items))
+
+
+
+# ================ 8 NETWORKS ================
+# ================ 9 SITUATIONS [PROBLEMS AND REMARKABLE] ================ 
+# ================ 10 PEOPLE'S OBSERVATION ================ 
