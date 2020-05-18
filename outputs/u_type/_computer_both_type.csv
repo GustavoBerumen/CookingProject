@@ -1,0 +1,5 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+7143,1,1,new,0,7,40,56,40S,56S,laptop,
+10571,2,9,new,0,1,0,100,0S,1M 40S,laptop,
+441111,3,12,new,0,21,210,226,3M 30S,3M 46S,laptop,
+11801,4,13,new,0,1,14,2564,14S,42M 44S,laptop,

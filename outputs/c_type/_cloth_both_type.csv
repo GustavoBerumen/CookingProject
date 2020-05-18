@@ -1,0 +1,14 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2117,1,6,reg,pink,211,2524,2526,42M 4S,42M 6S,regular,pink
+4163,2,14,reg,0,416,3528,3562,58M 48S,59M 22S,regular,yellow
+6126,3,15,reg,blue,6,46,50,46S,50S,regular,blue
+780,4,15,reg,orange,7,46,50,46S,50S,regular,orange
+647,5,17,reg,0,647,5712,5770,1H 35M 12S,1H 36M 10S,regular,yellow
+3477,6,19,reg,0,347,2404,2406,40M 4S,40M 6S,regular,yellow
+9019,7,20,reg,0,42,262,264,4M 22S,4M 24S,regular,blue
+60101,8,2,new,0,42,392,432,6M 32S,7M 12S,regular,blue
+79141,9,6,new,pink,275,4048,4050,1H 7M 28S,1H 7M 30S,regular,pink
+36301,10,13,new,0,36,186,188,3M 6S,3M 8S,regular,yellow
+251151,11,14,new,0,251,1792,1796,29M 52S,29M 56S,regular,yellow
+100131,12,15,new,orange,100,606,644,10M 6S,10M 44S,regular,orange
+39071,13,15,new,blue,390,2420,2480,40M 20S,41M 20S,regular,blue

@@ -1,0 +1,12 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+3614,1,6,reg,0,36,514,586,8M 34S,9M 46S,regular,loose
+926,2,8,reg,0,14,164,184,2M 44S,3M 4S,regular,loose
+997,3,9,reg,1,99,684,760,11M 24S,12M 40S,regular,loose
+1207,4,9,reg,0,120,894,1060,14M 54S,17M 40S,regular,loose
+1149,5,11,reg,0,3,74,76,1M 14S,1M 16S,regular,package
+3037,6,15,reg,0,303,1432,1444,23M 52S,24M 4S,regular,loose
+37021,7,4,new,0,5,56,92,56S,1M 32S,regular,loose
+15281,8,9,new,0,50,482,538,8M 2S,8M 58S,regular,loose
+11491,9,11,new,0,69,826,840,13M 46S,14M 0S,regular,package
+22601,10,17,new,0,22,180,182,3M 0S,3M 2S,regular,package
+61371,11,19,new,0,6,104,108,1M 44S,1M 48S,regular,loose

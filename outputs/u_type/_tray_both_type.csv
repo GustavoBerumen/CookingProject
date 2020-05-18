@@ -1,0 +1,10 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2116,1,6,reg,0,12,174,180,2M 54S,3M 0S,regular,
+13514,4,16,reg,chicken,2,68,70,1M 8S,1M 10S,regular,
+14313,5,16,reg,vegetables,48,324,366,5M 24S,6M 6S,regular,
+5160,6,1,new,rounded,5,16,22,16S,22S,round,
+6143,7,1,new,dark,6,20,24,20S,24S,regular,
+54271,8,16,new,chicken,54,1994,2000,33M 14S,33M 20S,regular,
+56271,9,16,new,vegetables,56,2000,2004,33M 20S,33M 24S,regular,
+471141,10,18,new,0,471,2358,2366,39M 18S,39M 26S,regular,
+23914,11,19,new,baking,239,1950,1954,32M 30S,32M 34S,regular,

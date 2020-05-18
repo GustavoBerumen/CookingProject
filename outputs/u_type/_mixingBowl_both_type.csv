@@ -1,0 +1,18 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2495,1,12,reg,red,31,332,334,5M 32S,5M 34S,plastic,large
+2256,2,12,reg,1,39,370,372,6M 10S,6M 12S,plastic,large
+595,3,17,reg,glass,595,5134,5160,1H 25M 34S,1H 26M 0S,glass,regular
+596,4,17,reg,glass_unused,596,5140,5148,1H 25M 40S,1H 25M 48S,glass,regular
+17101,5,20,reg,glass_1,40,252,276,4M 12S,4M 36S,glass,large
+3739,6,20,reg,glass_2,486,3246,3248,54M 6S,54M 8S,glass,large
+11181,7,6,new,plastic,19,516,526,8M 36S,8M 46S,plastic,large
+7105,8,7,new,plastic,7,106,110,1M 46S,1M 50S,plastic,regular
+64151,9,7,new,salad,64,1596,1628,26M 36S,27M 8S,glass,large
+31091,10,8,new,glass,8,106,110,1M 46S,1M 50S,glass,regular
+25071,11,12,new,1,52,528,530,8M 48S,8M 50S,plastic,large
+25371,12,12,new,red,161,1952,1962,32M 32S,32M 42S,plastic,large
+29501,13,15,new,glass,29,184,194,3M 4S,3M 14S,glass,large
+26812,14,17,new,glass,99,1836,1838,30M 36S,30M 38S,glass,small
+27812,15,17,new,aluminum,140,2084,2088,34M 44S,34M 48S,metal,regular
+5158,16,20,new,glass_3,11,3580,3584,59M 40S,59M 44S,glass,regular
+7140,17,20,new,glass_2,57,3754,3760,1H 2M 34S,1H 2M 40S,glass,large

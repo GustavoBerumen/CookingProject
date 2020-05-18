@@ -1,0 +1,16 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+11,1,1,reg,thighs,2,10,16,10S,16S,thighs,package
+4315,2,7,reg,0,43,288,300,4M 48S,5M 0S,whole,
+1426,3,9,reg,0,14,108,116,1M 48S,1M 56S,breast,
+11102,4,16,reg,0,11,114,118,1M 54S,1M 58S,thighs ,
+4339,5,20,reg,0,12,88,98,1M 28S,1M 38S,breast,
+71012,6,3,new,thighs_1,7,36,58,36S,58S,thighs,
+8361,7,3,new,thighs_2,8,36,50,36S,50S,thighs,
+25151,8,5,new,0,15,244,400,4M 4S,6M 40S,whole,
+46141,9,6,new,thighs_1,5,38,52,38S,52S,thighs,
+51141,10,6,new,thighs_2,6,38,52,38S,52S,thighs,
+25271,11,11,new,1,4,138,140,2M 18S,2M 20S,breast,
+43201,12,11,new,2,152,1764,1802,29M 24S,30M 2S,breast,
+44201,13,11,new,3,356,3440,3444,57M 20S,57M 24S,breast,
+11901,14,13,new,0,11,66,84,1M 6S,1M 24S,breast,
+31020,15,19,new,0,310,2662,2668,44M 22S,44M 28S,breast,

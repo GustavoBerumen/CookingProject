@@ -1,0 +1,7 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+5124,1,14,reg,0,5,36,40,36S,40S,regular,
+13315,2,17,reg,0,133,1602,1706,26M 42S,28M 26S,regular,
+1500,3,19,reg,0,1,4,60,4S,1M 0S,red,
+8020,4,12,new,0,5,32,32,32S,32S,premium,
+52271,5,14,new,0,52,328,386,5M 28S,6M 26S,regular,
+28501,6,15,new,0,28,184,202,3M 4S,3M 22S,regular,

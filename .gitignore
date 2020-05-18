@@ -1,6 +1,4 @@
-.bolt.yml
 .Rproj.user
-.RData
 .Rhistory
-files
-outputs
+.RData
+.Ruserdata

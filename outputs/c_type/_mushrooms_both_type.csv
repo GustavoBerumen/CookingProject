@@ -1,0 +1,11 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+1086,1,8,reg,0,31,352,370,5M 52S,6M 10S,chopped,
+1138,2,10,reg,0,11,84,90,1M 24S,1M 30S,regular,
+13114,3,11,reg,0,12,120,128,2M 0S,2M 8S,chopped,
+2654,4,12,reg,0,124,1370,1670,22M 50S,27M 50S,regular,
+2338,5,15,reg,0,23,162,176,2M 42S,2M 56S,small,
+33121,6,3,new,0,32,766,782,12M 46S,13M 2S,regular,
+20331,7,6,new,0,36,792,794,13M 12S,13M 14S,regular,
+24251,8,10,new,duxelles,24,194,202,3M 14S,3M 22S,duxelles,
+38191,9,10,new,1,38,354,396,5M 54S,6M 36S,duxelles,
+39191,10,10,new,2,39,354,356,5M 54S,5M 56S,duxelles,

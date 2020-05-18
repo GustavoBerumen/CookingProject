@@ -1,0 +1,10 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+3413,1,5,reg,0,34,782,818,13M 2S,13M 38S,red,to cook
+2843,2,11,reg,white,232,2438,2444,40M 38S,40M 44S,white,
+4322,3,13,reg,white,4,20,44,20S,44S,white,to cook
+7100,4,17,reg,0,7,122,124,2M 2S,2M 4S,red,
+3258,5,19,reg,white,325,2258,2272,37M 38S,37M 52S,white,
+51116,6,9,new,0,538,4630,4672,1H 17M 10S,1H 17M 52S,red,
+7108,7,10,new,red,7,44,50,44S,50S,red,
+49511,8,10,new,white,495,4436,4448,1H 13M 56S,1H 14M 8S,white,
+5881,9,11,new,white,28,288,294,4M 48S,4M 54S,white,

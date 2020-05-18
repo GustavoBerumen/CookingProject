@@ -1,0 +1,18 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+3613,1,5,reg,0,36,824,862,13M 44S,14M 22S,standard,
+1534,2,8,reg,0,89,724,730,12M 4S,12M 10S,standard,with a stand
+2065,3,9,reg,0,206,1428,1444,23M 48S,24M 4S,standard,
+2520,4,10,reg,0,25,172,178,2M 52S,2M 58S,standard,
+3843,5,14,reg,0,384,3286,3292,54M 46S,54M 52S,standard,
+9813,6,15,reg,0,98,510,522,8M 30S,8M 42S,standard,with a stand
+3928,7,16,reg,0,39,272,278,4M 32S,4M 38S,standard,with a stand
+28811,8,20,reg,0,52,300,306,5M 0S,5M 6S,standard,with a stand
+32121,9,3,new,0,34,780,782,13M 0S,13M 2S,standard,
+47131,10,5,new,0,38,1458,1508,24M 18S,25M 8S,standard,
+8961,11,8,new,0,104,984,994,16M 24S,16M 34S,standard,with a stand
+26941,12,9,new,0,133,878,890,14M 38S,14M 50S,standard,
+72181,13,10,new,0,72,936,972,15M 36S,16M 12S,standard,
+121161,14,14,new,0,121,724,736,12M 4S,12M 16S,standard,
+7524,15,15,new,0,75,416,438,6M 56S,7M 18S,standard,with a stand
+20501,16,16,new,0,20,1630,1632,27M 10S,27M 12S,standard,with a stand
+7132,17,17,new,0,7,96,140,1M 36S,2M 20S,standard,with a stand

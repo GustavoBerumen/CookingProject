@@ -1,0 +1,20 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2021,1,2,reg,0,23,264,276,4M 24S,4M 36S,white,loose
+1213,2,4,reg,0,9,42,46,42S,46S,white,rack
+6815,3,7,reg,0,67,740,820,12M 20S,13M 40S,white,loose
+1146,4,8,reg,0,3,26,130,26S,2M 10S,red,loose
+928,5,9,reg,0,9,70,102,1M 10S,1M 42S,red,loose
+3123,6,10,reg,0,31,218,232,3M 38S,3M 52S,white,rack
+1437,7,11,reg,0,111,1272,1354,21M 12S,22M 34S,red,loose
+2774,8,12,reg,0,4,48,54,48S,54S,red,loose
+3263,9,13,reg,0,6,24,44,24S,44S,shallot,package
+1260,10,14,reg,0,12,126,176,2M 6S,2M 56S,white,loose
+5132,11,17,reg,0,5,118,122,1M 58S,2M 2S,white,loose
+7024,12,19,reg,0,70,358,442,5M 58S,7M 22S,white,loose
+27616,13,2,new,0,47,498,500,8M 18S,8M 20S,white,loose
+14431,14,4,new,0,8,80,84,1M 20S,1M 24S,white,loose
+63131,15,5,new,0,27,1098,1132,18M 18S,18M 52S,white,loose
+331101,16,9,new,0,12,184,450,3M 4S,7M 30S,red,rack
+9301,17,10,new,0,9,52,72,52S,1M 12S,red,rack
+23971,18,12,new,0,155,1898,1900,31M 38S,31M 40S,white,rack
+51301,19,14,new,0,5,34,72,34S,1M 12S,white,loose

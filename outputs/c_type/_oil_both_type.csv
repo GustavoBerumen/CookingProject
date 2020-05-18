@@ -1,0 +1,47 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2001,1,2,reg,0,73,1238,1250,20M 38S,20M 50S,bottle,
+3111,2,3,reg,olive,31,650,662,10M 50S,11M 2S,bottle,
+1262,3,4,reg,spray,87,870,878,14M 30S,14M 38S,spray,
+6414,4,6,reg,refillable,64,876,900,14M 36S,15M 0S,refillable,
+2053,5,6,reg,spray_refillable,205,2444,2448,40M 44S,40M 48S,refillable,spray
+886,6,7,reg,0,88,1050,1076,17M 30S,17M 56S,bottle,
+1136,7,8,reg,0,20,214,228,3M 34S,3M 48S,bottle,
+1287,8,9,reg,olive,128,952,972,15M 52S,16M 12S,bottle,
+2420,9,10,reg,olive,24,164,172,2M 44S,2M 52S,bottle,
+14113,10,11,reg,olive,24,304,310,5M 4S,5M 10S,bottle,
+27111,11,12,reg,0,20,196,200,3M 16S,3M 20S,bottle,
+21310,12,13,reg,spray,47,350,368,5M 50S,6M 8S,spray,
+21014,13,13,reg,0,300,1874,1878,31M 14S,31M 18S,bottle,
+2238,14,14,reg,olive,22,218,226,3M 38S,3M 46S,bottle,
+8914,15,15,reg,0,89,420,432,7M 0S,7M 12S,bottle,
+4074,16,15,reg,olive,407,2104,2114,35M 4S,35M 14S,bottle,olive
+4135,17,16,reg,olive,4,100,104,1M 40S,1M 44S,bottle,olive
+9316,18,17,reg,olive,93,1272,1276,21M 12S,21M 16S,bottle,olive
+7817,19,18,reg,olive,78,426,458,7M 6S,7M 38S,bottle,olive
+12017,20,19,reg,vegetable,120,792,800,13M 12S,13M 20S,bottle,
+22214,21,19,reg,olive,222,1690,1692,28M 10S,28M 12S,bottle,olive
+3568,22,20,reg,olive,114,794,806,13M 14S,13M 26S,bottle,olive
+3578,23,20,reg,0,436,2894,2898,48M 14S,48M 18S,bottle,
+22415,24,1,new,0,224,1654,1656,27M 34S,27M 36S,bottle,
+27516,25,2,new,0,144,2268,2278,37M 48S,37M 58S,bottle,
+35121,26,3,new,olive,35,788,798,13M 8S,13M 18S,bottle,olive
+15031,27,4,new,spray,143,1538,1546,25M 38S,25M 46S,spray,
+33151,28,5,new,0,50,1680,1760,28M 0S,29M 20S,bottle,
+20431,29,6,new,olive,260,3888,3900,1H 4M 48S,1H 5M 0S,bottle,olive
+20531,30,6,new,spray_refillable,284,4194,4224,1H 9M 54S,1H 10M 24S,refillable,spray
+29181,31,7,new,0,29,336,366,5M 36S,6M 6S,bottle,
+9561,32,8,new,0,102,972,980,16M 12S,16M 20S,bottle,
+33041,33,9,new,olive,47,460,472,7M 40S,7M 52S,bottle,olive
+56181,34,10,new,olive,56,682,694,11M 22S,11M 34S,bottle,olive
+35051,35,10,new,olive_greek,350,3440,3456,57M 20S,57M 36S,refillable,olive
+28761,36,11,new,0,166,1900,1904,31M 40S,31M 44S,bottle,
+183121,37,13,new,olive,183,762,764,12M 42S,12M 44S,bottle,olive
+251141,38,13,new,vegetable,251,1002,1006,16M 42S,16M 46S,bottle,
+7791,39,13,new,spray,spray,spray,spray,spray,spray,spray,
+206101,40,15,new,olive,206,1222,1252,20M 22S,20M 52S,bottle,olive
+130141,41,16,new,olive,130,2506,2520,41M 46S,42M 0S,bottle,olive
+13901,42,17,new,vegetable,13,144,156,2M 24S,2M 36S,bottle,
+43371,43,17,new,olive,433,4714,4718,1H 18M 34S,1H 18M 38S,bottle,olive
+91011,44,18,new,olive,9,128,130,2M 8S,2M 10S,bottle,olive
+45961,45,18,new,vegetable,459,2332,2336,38M 52S,38M 56S,bottle,
+137171,46,19,new,0,137,1144,1152,19M 4S,19M 12S,bottle,

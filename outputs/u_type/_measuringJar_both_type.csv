@@ -1,0 +1,16 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+1575,1,9,reg,0,157,1108,1118,18M 28S,18M 38S,glass,
+2099,2,13,reg,0,63,436,484,7M 16S,8M 4S,plastic,
+15510,3,14,reg,0,155,1252,1254,20M 52S,20M 54S,plastic,large
+15610,4,14,reg,small,156,1252,1262,20M 52S,21M 2S,plastic,
+880,5,15,reg,0,8,50,52,50S,52S,glass,
+2489,6,17,reg,0,248,2716,2722,45M 16S,45M 22S,plastic,
+3309,7,20,reg,1,28,158,162,2M 38S,2M 42S,glass,
+34213,8,20,reg,2,379,2522,2528,42M 2S,42M 8S,glass,large
+15631,9,4,new,0,329,2862,2870,47M 42S,47M 50S,glass,
+8661,10,8,new,0,16,194,230,3M 14S,3M 50S,glass,
+31841,11,9,new,0,183,1130,1140,18M 50S,19M 0S,glass,
+52411,12,10,new,0,524,4620,4640,1H 17M 0S,1H 17M 20S,plastic,
+147121,13,14,new,small,147,916,918,15M 16S,15M 18S,plastic,large
+81001,14,15,new,0,8,90,96,1M 30S,1M 36S,glass,
+89181,15,20,new,2,172,4512,4532,1H 15M 12S,1H 15M 32S,glass,large

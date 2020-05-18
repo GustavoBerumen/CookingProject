@@ -1,0 +1,224 @@
+---
+title: "Results"
+author: ''
+date: ''
+output:
+  pdf_document:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+    df_print: kable
+    latex_engine: xelatex
+  html_document: default
+  word_document: default
+header-includes: |
+  ```{=latex}
+  \usepackage{float}
+  \floatplacement{figure}{H}
+  ```
+---
+
+```{r load myData, include=FALSE, echo=FALSE}
+load("C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/fname.RData")
+# required libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(htmlTable)
+library(scales)
+library(formattable)
+options(knitr.kable.NA = '')
+
+```
+An introduction to results. A description of each one of the results.
+
+### Participants
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+p_df <- participants.list[, 1:9]
+
+kable(p_df, alig = "l", "latex", caption = "Participants demographics", booktabs = T) %>%
+  kable_styling(latex_options ="scale_down")  %>%
+   footnote(symbol = ("Notes. p = participant, coo = country of origin, noi = number of inhabitants, nb = non-binary"))
+```
+
+### Recipes
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+recipes_df <- recipe.list[, 1:3]
+
+names(recipes_df)[1:2] <- c("session", "regular")
+
+kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position"))
+```
+
+### Source of recipes
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+source_df <- recipe.list[, c(1,4:7)]
+# rename data frame column
+names(source_df)[names(source_df) == "id"] <- "session"
+
+kable(source_df,  "latex", alig = "l", caption = "Source of recipes", booktabs = T) %>%
+  kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
+   footnote(symbol = ("Notes. s.time = sugested cooking time in minutes"))
+```
+
+### Inventory CPGs
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+inv_df <- inventory.list
+names(inv_df)[1:2] <- c("participant", "CPGs")
+
+kable(inv_df, alig = "l", "latex", caption = "Inventory CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+```{r, fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, tidy = TRUE}
+inv_df <- inventory.list
+names(inv_df)[1:2] <- c("participant", "CPGs")
+breaks_values <- seq(0, 20, by=2) 
+
+ggplot(inv_df, aes(x=participant, y=CPGs)) +
+  geom_bar(stat="identity", fill = "#BAB0AC") +
+  geom_hline(aes(yintercept = mean(CPGs), color = "mean(CPGs)"), linetype = 2, size = 0.5)  +
+  scale_colour_manual(values = c("black")) + 
+  labs(x="household", y="number of CPGs", title = "Total number of available CPGs per household", colour = "") +
+  scale_x_continuous(breaks = breaks_values,
+                     labels = abs(breaks_values)) +
+  scale_y_continuous(breaks = c(0,100,200,400),
+                     labels = abs(c(0,100,200,400))) +
+  theme_gdocs() +
+  theme(plot.title = element_text(size=14), plot.background=element_blank(), panel.grid.major.x = element_blank()) + 
+  theme(legend.title = element_text(size=2), legend.text=element_text(size=10)) + 
+  geom_bar(data=subset(inv_df, CPGs==max(CPGs)), aes(participant, CPGs),
+              fill="#F28E2B", stat="identity") +
+  geom_text(data = subset(inv_df, CPGs==max(CPGs)), aes(label = CPGs), position = position_stack(1.03), color = "black") +
+  geom_bar(data=subset(inv_df, CPGs==min(CPGs)), aes(participant, CPGs),
+              fill="#F28E2B", stat="identity") +
+  geom_text(data = subset(inv_df, CPGs==min(CPGs)), aes(label = CPGs), position = position_stack(1.3), color = "black") +  
+  annotate(geom = "text", x = 3, y = -10, label = "min", hjust = "center") +  
+  annotate(geom = "text", x = 17, y = -10, label = "max", hjust = "center")
+```
+
+### List of items
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+c_df <- i.lists$c[ ,c(1,3)]
+c_dfa <- cbind(c_df[1:51, ], c_df[52:102, ], c_df[103:153, ])
+
+kable(c_dfa, "latex", alig = "l",  caption = "List of CPGs", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+
+u_df <- i.lists$u[ ,c(1,3)]
+u_dfa <- cbind(u_df[1:28, ], u_df[29:56, ], u_df[57:84, ])
+
+kable(u_dfa, "latex", alig = "l",  caption = "List of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+
+e_df <- i.lists$e[ ,c(1,3)]
+e_dfa <- cbind(e_df[1:5, ], e_df[6:10, ], e_df[11:15, ])
+
+kable(e_dfa, "latex", alig = "l",  caption = "List of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+
+### Items by type
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+c_dft <- as.data.frame(table(c_df$`sub-cat`))
+names(c_dft) <- c("item", "count")
+c_dft$percent <- round( (c_dft$count/sum(c_dft$count) * 100), digits =1)
+
+kable(c_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+
+u_dft <- as.data.frame(table(u_df$`sub-cat`))
+names(u_dft) <- c("item", "count")
+u_dft$percent <- round((u_dft$count/sum(u_dft$count) * 100), digits =1)
+
+kable(u_dft, "latex", alig = "l",  caption = "Type of utensils", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+
+e_dft <- as.data.frame(table(e_df$`sub-cat`))
+names(e_dft) <- c("item", "count")
+e_dft$percent <- round((e_dft$count/sum(e_dft$count) * 100), digits =1)
+
+kable(e_dft, "latex", alig = "l",  caption = "Type of environment items", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+
+```
+
+### Duration recipes
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+t_df <- time.list
+names(t_df)[1:2] <- c("session", "regular")
+
+kable(t_df, "latex", alig = "l", caption = "Duration of recipes", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position"))
+```
+
+```{r, fig.align='center', warning=FALSE, echo=FALSE, message=FALSE,  tidy = TRUE}
+# calculate breaks values
+breaks_values <- c(-120, -60, -30, 0, 30, 60, 120)
+
+## create plot
+ggplot(time_df2, aes(x = participant, y = duration, fill = session)) +
+  geom_hline(yintercept = 0) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  labs(x="participant", y="duration (minutes)", title = "Duration of recipe" ) +
+  scale_y_continuous(breaks = breaks_values,
+                     labels = abs(breaks_values)) +
+  scale_x_continuous(breaks = c(seq(0, 20, by=2)),
+                     labels = c(seq(0, 20, by=2))) +
+  scale_fill_tableau(direction = -2) +
+  theme_gdocs() +
+  theme(plot.title = element_text(size=14), plot.background=element_blank())
+```
+
+```{r, fig.align='center', layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+ggplot(time_df1,aes(x=session, y = duration)) + 
+  facet_wrap(~participant) +
+  geom_col(aes(fill = factor(session))) +
+  scale_fill_tableau(direction = -2) +
+  theme_gdocs() +
+  theme(legend.title = element_blank()) +
+  labs(title = "total duration of recipes",
+       subtitle =("all participants")) +
+  ylab("duration(m)") +
+  theme(plot.background=element_blank())
+```
+
+### Items used 
+
+The list of the items used
+
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+total_df<- num.list$n.total
+total_df$session[2] <- "regular"
+
+kable(total_df, "latex", alig = "l", caption = "Total number of items used in minutes", booktabs = T) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
+```
+
+
+### Total number of different items used 
+
+The total number of different items used were as follows: 
+
+```{r, layout="l-body-outset", warning=FALSE, echo=FALSE, message=FALSE}
+total_df<- num.list$n.total
+total_df$session[2] <- "new"
+
+kable(total_df, "latex", alig = "l", caption = "Total number of different items used", booktabs = T) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+   footnote(symbol = ("c = CPGs, u = utensils, e = environment"))
+```

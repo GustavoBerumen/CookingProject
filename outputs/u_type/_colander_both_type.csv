@@ -1,0 +1,17 @@
+,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
+2741,1,4,reg,0,220,1782,1788,29M 42S,29M 48S,metal,regular
+4816,2,8,reg,0,33,374,412,6M 14S,6M 52S,metal,regular
+3619,3,11,reg,0,247,2558,2582,42M 38S,43M 2S,metal,small
+7611,4,12,reg,0,32,338,340,5M 38S,5M 40S,plastic,regular
+8716,5,17,reg,0,87,1206,1228,20M 6S,20M 28S,metal,regular
+4904,6,18,reg,0,490,2246,2252,37M 26S,37M 32S,metal,regular
+19914,7,19,reg,0,199,1548,1550,25M 48S,25M 50S,metal,regular
+9220,8,20,reg,0,145,972,978,16M 12S,16M 18S,metal,small
+68101,9,2,new,0,133,2170,2174,36M 10S,36M 14S,metal,regular
+8441,10,5,new,0,5,32,52,32S,52S,metal,regular
+46631,11,12,new,0,49,500,506,8M 20S,8M 26S,plastic,large
+39871,12,15,new,0,398,2480,2494,41M 20S,41M 34S,metal,regular
+8126,13,17,new,0,55,1036,1044,17M 16S,17M 24S,metal,regular
+228131,14,18,new,0,228,1350,1356,22M 30S,22M 36S,metal,regular
+108171,15,19,new,0,108,850,852,14M 10S,14M 12S,metal,regular
+16103,16,20,new,0,22,3604,3608,1H 0M 4S,1H 0M 8S,metal,small
