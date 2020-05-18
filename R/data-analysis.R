@@ -1805,19 +1805,15 @@ pivot %>%
   dplyr::group_by(type) %>%
   dplyr::summarise(avg = mean(n))
 
+### tranform matrix into data fram
+m.places <- melt(df.places, id=(c("item", "type")))
+names(m.places)[3:4] <- c("place", "value")
 
+# frequency by place
+pivot <- m.places %>%
+  dplyr::group_by(place, type) %>%
+  dplyr::summarise(avg = mean(value))
 
-
-
-# get table of percentages
-pivot <-  places.list %>%
-  dplyr::group_by(place) %>%
-  dplyr::summarise(avg = mean(n))
-
-# get means by type
-pivot %>%
-  dplyr::group_by(place) %>%
-  dplyr::summarise(avg = mean(n))
 
 
 # ================ 7 CONSUMPTION ================
