@@ -1,6 +1,6 @@
 ,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
-945,1,7,reg,0,94,1126,1142,18M 46S,19M 2S,regular,
-31014,2,15,reg,0,310,1456,1480,24M 16S,24M 40S,regular,
-2170,3,16,reg,0,2,68,70,1M 8S,1M 10S,regular,
-55271,4,16,new,0,55,1994,2000,33M 14S,33M 20S,regular,
-46061,5,18,new,0,460,2340,2366,39M 0S,39M 26S,regular,
+945,1,7,reg,0,94,1126,1142,18M 46S,19M 2S,roll,
+31014,2,15,reg,0,310,1456,1480,24M 16S,24M 40S,roll,
+2170,3,16,reg,0,2,68,70,1M 8S,1M 10S,roll,
+55271,4,16,new,0,55,1994,2000,33M 14S,33M 20S,roll,
+46061,5,18,new,0,460,2340,2366,39M 0S,39M 26S,roll,

@@ -1,56 +1,56 @@
 ,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
 13,1,1,reg,0,53,340,342,5M 40S,5M 42S,wood,
 4010,2,2,reg,0,19,222,268,3M 42S,4M 28S,wood,
-2751,3,4,reg,0,7,36,38,36S,38S,plastic,foldable
+2751,3,4,reg,0,7,36,38,36S,38S,foldable,plastic
 1117,4,6,reg,0,11,174,198,2M 54S,3M 18S,plastic,
 3516,5,8,reg,0,1,24,34,24S,34S,wood,
 729,6,9,reg,0,7,62,102,1M 2S,1M 42S,wood,
 4108,7,10,reg,0,4,28,32,28S,32S,wood,
-1430,8,11,reg,blue,10,108,118,1M 48S,1M 58S,plastic,foldable
-1929,9,11,reg,gray,11,108,118,1M 48S,1M 58S,plastic,foldable
+1430,8,11,reg,blue,10,108,118,1M 48S,1M 58S,foldable,plastic
+1929,9,11,reg,gray,11,108,118,1M 48S,1M 58S,foldable,plastic
 2226,10,11,reg,wood,114,1284,1350,21M 24S,22M 30S,wood,
 4420,11,12,reg,0,19,182,194,3M 2S,3M 14S,plastic,
 4022,12,13,reg,0,16,102,108,1M 42S,1M 48S,wood,
-1190,13,14,reg,green,1,30,32,30S,32S,plastic,foldable
-5022,14,14,reg,red,50,422,424,7M 2S,7M 4S,plastic,foldable
-1270,15,15,reg,blue,12,88,90,1M 28S,1M 30S,plastic,foldable
+1190,13,14,reg,green,1,30,32,30S,32S,foldable,plastic
+5022,14,14,reg,red,50,422,424,7M 2S,7M 4S,foldable,plastic
+1270,15,15,reg,blue,12,88,90,1M 28S,1M 30S,foldable,plastic
 1370,16,15,reg,green,13,88,90,1M 28S,1M 30S,plastic,
-4492,17,15,reg,white,449,2292,2298,38M 12S,38M 18S,plastic,foldable
+4492,17,15,reg,white,449,2292,2298,38M 12S,38M 18S,foldable,plastic
 7915,18,16,reg,0,79,490,492,8M 10S,8M 12S,plastic,
-2190,19,17,reg,green,2,90,100,1M 30S,1M 40S,plastic,foldable
+2190,19,17,reg,green,2,90,100,1M 30S,1M 40S,foldable,plastic
 4827,20,17,reg,1,48,476,502,7M 56S,8M 22S,wood,
 1490,21,18,reg,0,14,100,166,1M 40S,2M 46S,plastic,
-3040,22,18,reg,blue,30,178,184,2M 58S,3M 4S,plastic,foldable
+3040,22,18,reg,blue,30,178,184,2M 58S,3M 4S,foldable,plastic
 3339,23,19,reg,1,33,182,184,3M 2S,3M 4S,plastic,
-3807,24,19,reg,unused_2,380,2588,2602,43M 8S,43M 22S,plastic,foldable
+3807,24,19,reg,unused_2,380,2588,2602,43M 8S,43M 22S,foldable,plastic
 5429,26,20,reg,1,1,26,34,26S,34S,wood,
 6628,27,20,reg,red,91,554,558,9M 14S,9M 18S,plastic,
 19916,28,1,new,0,199,1428,1432,23M 48S,23M 52S,wood,
 45101,29,2,new,0,56,580,586,9M 40S,9M 46S,wood,
 51015,30,3,new,0,5,28,32,28S,32S,wood,
 30521,31,4,new,blue,12,98,102,1M 38S,1M 42S,wood,
-32021,32,4,new,green,255,2240,2242,37M 20S,37M 22S,plastic,foldable
-10161,33,5,new,blue,9,144,158,2M 24S,2M 38S,plastic,foldable
+32021,32,4,new,green,255,2240,2242,37M 20S,37M 22S,foldable,plastic
+10161,33,5,new,blue,9,144,158,2M 24S,2M 38S,foldable,plastic
 58141,34,6,new,0,1,2,6,2S,6S,plastic,
 8571,35,9,new,0,6,142,146,2M 22S,2M 26S,wood,
 13381,36,10,new,0,133,1384,1390,23M 4S,23M 10S,wood,
-51201,37,11,new,blue,2,126,130,2M 6S,2M 10S,plastic,foldable
-71191,38,11,new,dark,35,436,440,7M 16S,7M 20S,plastic,foldable
+51201,37,11,new,blue,2,126,130,2M 6S,2M 10S,foldable,plastic
+71191,38,11,new,dark,35,436,440,7M 16S,7M 20S,foldable,plastic
 84121,39,11,new,wood,36,436,438,7M 16S,7M 18S,wood,
 49831,40,12,new,0,59,548,674,9M 8S,11M 14S,wood,
 28381,41,13,new,1,28,128,156,2M 8S,2M 36S,wood,
 84141,42,13,new,m,84,384,510,6M 24S,8M 30S,wood,
 156111,43,13,new,small,156,698,706,11M 38S,11M 46S,wood,
 24081,44,13,new,rounded,240,952,954,15M 52S,15M 54S,wood,
-61251,45,14,new,g,6,40,42,40S,42S,plastic,foldable
-70231,46,14,new,r,70,446,448,7M 26S,7M 28S,plastic,foldable
-140131,47,15,new,white,140,874,876,14M 34S,14M 36S,plastic,foldable
+61251,45,14,new,g,6,40,42,40S,42S,foldable,plastic
+70231,46,14,new,r,70,446,448,7M 26S,7M 28S,foldable,plastic
+140131,47,15,new,white,140,874,876,14M 34S,14M 36S,foldable,plastic
 141171,48,15,new,blue,141,874,876,14M 34S,14M 36S,plastic,
 142151,49,15,new,gray,142,876,880,14M 36S,14M 40S,plastic,
-26601,50,16,new,0,26,1644,1682,27M 24S,28M 2S,plastic,foldable
+26601,50,16,new,0,26,1644,1682,27M 24S,28M 2S,foldable,plastic
 211001,51,17,new,wood,21,178,180,2M 58S,3M 0S,wood,
-24701,52,17,new,yellow,24,186,196,3M 6S,3M 16S,plastic,foldable
-51451,53,17,new,green,51,984,990,16M 24S,16M 30S,plastic,foldable
+24701,52,17,new,yellow,24,186,196,3M 6S,3M 16S,foldable,plastic
+51451,53,17,new,green,51,984,990,16M 24S,16M 30S,foldable,plastic
 95161,54,18,new,0,95,580,962,9M 40S,16M 2S,plastic,
 3090,55,19,new,0,30,290,294,4M 50S,4M 54S,plastic,
 12104,56,20,new,1,134,4196,4202,1H 9M 56S,1H 10M 2S,wood,

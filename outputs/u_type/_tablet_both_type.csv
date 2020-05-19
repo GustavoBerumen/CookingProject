@@ -1,4 +1,4 @@
 ,id,participant,session,items_uniq,order,start,end,start_hms,end_hms,type,comments
-5012,1,4,reg,0,236,1870,1916,31M 10S,31M 56S,regular,
-31261,2,10,new,0,3,28,32,28S,32S,regular,
-51271,3,13,new,0,5,44,1836,44S,30M 36S,regular,
+5012,1,4,reg,0,236,1870,1916,31M 10S,31M 56S,standard,
+31261,2,10,new,0,3,28,32,28S,32S,standard,
+51271,3,13,new,0,5,44,1836,44S,30M 36S,standard,
