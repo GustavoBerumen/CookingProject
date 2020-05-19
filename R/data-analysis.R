@@ -1821,8 +1821,8 @@ pivot <- m.places %>%
 # ================ 7 FORMS ================
 # prepare data frame
 pivot <- forms.list %>%
-  dplyr::distinct(type, item, form) %>% 
-  dplyr::group_by(type, item) %>% 
+  dplyr::distinct(type, item, form) %>%
+  dplyr::group_by(type, item) %>%
   dplyr::summarise(n = n())
 
 
@@ -1833,7 +1833,7 @@ pivot <- forms.list %>%
 # ================ [8] CONSUMPTION ================
 # prepare data frame
 pivot <- df %>%
-  dplyr::select(items, items_uniq, p_corrected) %>% 
+  dplyr::select(items, items_uniq, p_corrected) %>%
   dplyr::group_by(items, items_uniq) %>%
   dplyr::summarise(total = length(items))
 
