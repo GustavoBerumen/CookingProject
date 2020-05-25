@@ -29,6 +29,7 @@ inventory.list <- as.data.frame(read_excel(file.items, sheet = "inventory"))
 participants.list<- as.data.frame(read_excel(file.items, sheet = "participants"))
 places.list <- as.data.frame(read_excel(file.items, sheet = "places"))
 forms.list <- as.data.frame(read_excel(file.items, sheet = "forms"))
+activities.list <- as.data.frame(read_excel(file.items, sheet = "activities"))
 
 # assign files to df
 for (i in 1:length(file.list)){

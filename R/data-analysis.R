@@ -954,7 +954,7 @@ p + stat_summary(fun=mean, geom="point", size=1, color ="red") +
 
 # mean and sd
 pivot %>% dplyr::group_by(category) %>%
-  dplyr::summarise(count = n(), mean = mean(duration, na.rm = TRUE), sd = sd(duration, na.rm = TRUE), total = sum(duration))
+  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
 
 cat("------------------ ", "categories", "u")
 
@@ -1748,16 +1748,18 @@ top.df <- top.df %>%
 
 # ================ 5 ITEMS SEQUENCE / ITEMS AROUND ================
 
-bef <- items_around_n("salt", "both", "bef")
-dur <- items_around_n("salt", "both", "in")
-aft <- items_around_n("salt", "both", "aft")
-
-bef.summ <- around_summary_ouput("both", "bef", 2)
-dur.summ <- around_summary_ouput("both", "in", 2)
-aft.summ <- around_summary_ouput("both", "aft", 2)
+# bef <- items_around_n("salt", "both", "bef")
+# dur <- items_around_n("salt", "both", "in")
+# aft <- items_around_n("salt", "both", "aft")
+# 
+# bef.summ <- around_summary_ouput("both", "bef", 2)
+# dur.summ <- around_summary_ouput("both", "in", 2)
+# aft.summ <- around_summary_ouput("both", "aft", 2)
 
 # load  data files from RData
-
+bef.summ
+in.summ
+aft.summ
 
 test <- bef$items.intv
 
@@ -1780,9 +1782,9 @@ names(df.p)[1:3] <- c("item", "place", "count")
 mt.p <- dcast(places.list, item~place)
 
 # get percentage
-cols.mtP <- length(mtP)
-for (i in seq_along(mtP$item)){
-  mtP[i, 2:cols.mtP] <- round((mtP[i, 2:cols.mtP]/sum(mtP[i, 2:cols.mtP])*100), digits = 0)}
+cols.mt <- length(mt.p)
+for (i in seq_along(mt.p$item)){
+  mt.p[i, 2:cols.mt] <- round((mt.p[i, 2:cols.mt]/sum(mt.p[i, 2:cols.mt])*100), digits = 0)}
 
 # get type list
 types <-  places.list %>%
@@ -1790,7 +1792,7 @@ types <-  places.list %>%
   dplyr::distinct(type, items)
 
 # add column to data frame
-df.places <- cbind(types[1], mtP)
+df.places <- cbind(types[1], mt.p)
 
 ### summary statistics
 
@@ -1822,14 +1824,22 @@ pivot <- m.places %>%
 # prepare data frame
 pivot <- forms.list %>%
   dplyr::distinct(type, item, form) %>%
-  dplyr::group_by(type, item) %>%
-  dplyr::summarise(n = n())
+  dplyr::group_by(type) %>%
+  dplyr::summarise(total= n())
 
+# ================ 8 ACTIVITIES ================
+# prepare data frame
+pivot <- activities.list %>%
+  dplyr::group_by(item, activity) %>%
+  dplyr::summarise(total= n())
+
+pivot <- activities.list %>%
+  dplyr::group_by(item, activity) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(total = (round(n/sum(n)*100, 0)))
 
 
 # ================ [9] SITUATIONS [PROBLEMS AND REMARKABLE] ================
-# ================ [10] NETWORKS ================
-# ================ [11] PEOPLES' OBSERVATION ================
 # ================ [8] CONSUMPTION ================
 # prepare data frame
 pivot <- df %>%
@@ -1838,6 +1848,5 @@ pivot <- df %>%
   dplyr::summarise(total = length(items))
 
 
-
-
-# ================ [9] ACTIVITES ================
+# ================ [10] NETWORKS ================
+# ================ [11] PEOPLES' OBSERVATIONs ================
