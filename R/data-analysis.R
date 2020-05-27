@@ -255,7 +255,6 @@ two_anova <- function(pivot, f1, f2){
 df <- reg.new.con.cat
 
 # ================ 1 INTERACTIONS ================
-
 cat("------------------ ", "sessions")
 
 # prepare data frame
@@ -518,8 +517,15 @@ inter.df$item <- c(1:10)
 inter.df <- inter.df %>%
   dplyr::select(item, everything())
 
+### items average
+pivot <- df %>%
+  dplyr::group_by(items, type, p_corrected) %>%
+  dplyr::summarise(total = n(), p = length(unique(p_corrected))) %>%
+  dplyr::summarise(min = min(total), max = max(total), total = sum(total), p = sum(p), avg = total/p)
+  dplyr::arrange(desc(total))
+
 # save df to fname.RData
-resave('inter.df', file='fname.RData')
+# resave('inter.df', file='fname.RData')
 
 # ================ 2 DURATION ================
 
@@ -784,8 +790,10 @@ dur.df$item <- c(1:10)
 dur.df <- dur.df %>%
   dplyr::select(item, everything())
 
-# save df to fname.RData
-resave('dur.df', file='fname.RData')
+### items average
+pivot <- df %>%
+  dplyr::group_by(items, type) %>%
+  dplyr::summarise(min = min(duration), max = max(duration), total = sum(duration), n = length(items), avg = total/n) 
 
 # ================ 3 FREQUENCY grouping ================
 
@@ -1404,6 +1412,13 @@ top.df$item <- c(1:10)
 top.df <- top.df %>%
   dplyr::select(item, everything())
 
+
+### items average
+pivot <- df %>%
+  dplyr::distinct(items, items_uniq, p_corrected) %>%
+  dplyr::group_by(items) %>%
+  dplyr::summarise(n = length(unique(p_corrected)),  total = length(items), avg = total/n)
+  
 # save df to fname.RData
 # resave('top.df', file='fname.RData')
 
@@ -1653,6 +1668,12 @@ pivot <- dfR %>%
 cat("no differences by start_gr")
 
 
+### items average
+pivot <- dfR %>%
+  dplyr::group_by(items, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr))
+
+
 
 cat("------------------ ", "categories")
 ### set factors
@@ -1825,6 +1846,11 @@ pivot <- m.places %>%
 pivot <- forms.list %>%
   dplyr::distinct(type, item, form) %>%
   dplyr::group_by(type) %>%
+  dplyr::summarise(total= n())
+
+# prepare data frame
+pivot <- forms.list %>%
+  dplyr::group_by(type, item, form) %>%
   dplyr::summarise(total= n())
 
 # ================ 8 ACTIVITIES ================
