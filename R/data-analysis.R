@@ -15,6 +15,29 @@ library(data.table)
 
 ### functions
 
+# function to produce summary statistics from a vector 
+data_summary <- function(x) {
+  m <- mean(x)
+  sd <- sd(x)
+  minm <- min(x)
+  maxm <- max(x)
+  
+  return(
+    data.frame(
+          mean = round(m, digits = 2),
+          sd =  round(sd, digits = 2),
+          min = minm,
+          max = maxm))
+}
+
+# funciton to return summary statistics from a data frame 
+desc_df <- function(df, column){
+  df %>% dplyr::group_by(!!rlang::sym(names(.)[column])) %>%
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), min = min(total), max = max(total), total = sum(total))
+}
+  
+
+
 # function to find relative position
 rel_summary <- function(df, seqs){
   out <- vector("double", length(df))
@@ -70,7 +93,7 @@ one_anova <- function(pivot, f1){
   # summary statistics
   desc.df <-
     pivot %>% dplyr::group_by(!!rlang::sym(names(.)[f1])) %>%
-    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE))
+    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
 
   # visualize data [version a]
   desc.pl <-
@@ -142,7 +165,6 @@ one_anova <- function(pivot, f1){
              desc.pl = desc.pl,
              aov.summ = aov.summ,
              aov.tukey = aov.tukey,
-             aov.glh = aov.glh,
              aov.pair = aov.pair,
              levene = levene,
              shapiro = shapiro,
@@ -255,7 +277,7 @@ two_anova <- function(pivot, f1, f2){
 df <- reg.new.con.cat
 
 # ================ 1 INTERACTIONS ================
-cat("------------------ ", "sessions")
+# -------~~ sessions --------
 
 # prepare data frame
 pivot <- df %>%
@@ -264,39 +286,59 @@ pivot <- df %>%
   dplyr::summarise(total = length(items))
 
 # order data frame
-pivot <- pivot[order(pivot$'session'), ]
+pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
+data_summary(pivot$total)
+
+# filter reg
+pivotReg <- pivot %>%
+  filter(session == "reg")
+data_summary(pivotReg$total)
+
+# filter new
+pivotNew <- pivot %>%
+  filter(session == "new")
+data_summary(pivotNew$total)
 
 # check for normality
 shapiro.test(pivot$total)
-
 # visual inspection normality
 ggqqplot(pivot$total)
 
-# normality was not met -> prepare data frame summary
-dplyr::group_by(pivot, session) %>%
-  dplyr::summarise(count = n(),
-                   median = median(total, na.rm = TRUE),
-                   IQR = IQR(total, na.rm = TRUE))
+# normality was met
+t.test(pivotReg$total, pivotNew$total, paired = TRUE, alternative = "two.sided")
 
-# visualize groups
-ggboxplot(pivot, x = "session", y = "total")
+# visualize groups 
+pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
+  geom_boxplot() +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  ggtitle("Total Interactions by Sessions")
 
-wilcox.test(pivot$total[pivot$session=="reg"], pivot$total[pivot$session=="new"], paired=T)
 
-# wilconson (normality is not meet)
-wilcoxsign_test(pivot$total[pivot$session=="reg"] ~ pivot$total[pivot$session=="new"])
+# # normality was not met -> prepare data frame summary
+# dplyr::group_by(pivot, session) %>%
+#   dplyr::summarise(count = n(),
+#                    median = median(total, na.rm = TRUE),
+#                    IQR = IQR(total, na.rm = TRUE))
+
+# # wilconson (normality is not meet)
+# wilcox.test(pivot$total[pivot$session=="reg"], pivot$total[pivot$session=="new"], paired=T)
+# 
+# wilcoxsign_test(pivot$total[pivot$session=="reg"] ~ pivot$total[pivot$session=="new"])
 
 # calculate effect size (absolute Z/sqrt(len of both groups))
-61.5/sqrt(40)
+# 61.5/sqrt(40)
 
-cat("------------------ ", "type")
-
+# -------~~ type --------
 pivot <- df %>%
   dplyr::group_by(session, participant, type) %>%
   dplyr::summarise(total = length(items), percent = (length(items)/ length(df$items))*100)
 
 # re-order type
 pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
+
+# anova function summary 
+all.aov <- one_anova(pivot, 3)
+
 
 # check normatlity for anova
 # a. Homogeneity of variances
@@ -321,21 +363,21 @@ compare_means(total ~ type,  data = pivot)
 dunnTest(total~type, data = pivot)
 
 # set comparisons
-my_comparisons <-  list(c("c", "u"),  c("c", "e"))
+my_comparisons <-  list(c("c", "u"),  c("c", "e"), c("u", "e"))
 
 ggboxplot(pivot, x = "type", y = "total",
           color = "type", add = "jitter") +
-  stat_compare_means(comparisons = my_comparisons) +      # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 800) +                     # Add global p-value
-  ggtitle("Interactions and Type")
+          stat_compare_means(comparisons = my_comparisons) +      # Add pairwise comparisons p-value
+          stat_compare_means(label.y = 800) +                     # Add global p-value
+          ggtitle("Interactions and Type")
 
 # mean and sd
 pivot %>% dplyr::group_by(type) %>%
   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
 
 
-cat("------------------ ", "categories", "c")
-
+# -------~~ categories --------
+# -------~~ categories c --------
 # prepare data
 pivot <- df %>%
   filter(type == "c") %>%
@@ -343,6 +385,32 @@ pivot <- df %>%
   dplyr::group_by(items, category, p_corrected) %>%
   dplyr::summarise(total = n())
 
+# anova summary class
+all.aov <- one_anova(pivot, 2)
+
+# -------~~ categories u--------
+# prepare data
+pivot <- df %>%
+  filter(type == "u") %>%
+  dplyr::select(items, items_uniq, category, p_corrected) %>%
+  dplyr::group_by(items, category, p_corrected) %>%
+  dplyr::summarise(total = n())
+
+# anova summary class
+all.aov <- one_anova(pivot, 2)
+
+# -------~~ categories e--------
+# prepare data
+pivot <- df %>%
+  filter(type == "e") %>%
+  dplyr::select(items, items_uniq, category, p_corrected) %>%
+  dplyr::group_by(items, category, p_corrected) %>%
+  dplyr::summarise(total = n())
+
+# anova summary class
+all.aov <- one_anova(pivot, 2)
+
+# -------~~ categories previous --------
 
 # anova
 aov.df <- aov(total ~ category, data = pivot)
@@ -483,30 +551,45 @@ p + stat_summary(fun=mean, geom="point", size=1, color ="red") +
 pivot %>% dplyr::group_by(category) %>%
   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
 
-cat("------------------ ", "data frame most items")
 
+# -------~~ data most items --------
+# summary statistics
+
+# prepare data
 pivot <- df %>%
-  dplyr::group_by(items, type) %>%
-  dplyr::summarise(total = n()) %>%
-  dplyr::arrange(desc(total))
+  dplyr::select(items, items_uniq, type, category, p_corrected) %>%
+  dplyr::group_by(items, category, type, p_corrected) %>%
+  dplyr::summarise(total = n())
 
-subset.c <- pivot %>%
+# data frame summary 
+pivot_items <- desc_df(pivot, 1)
+
+# add type to data frame
+items.list.m <-  items.list[, 1:2]
+names(items.list.m)[1] <- "items"
+# vlookup like function in t
+pivot_items <- (merge(items.list.m, pivot_items, by = 'items'))
+
+# filter items 
+subset.c <- pivot_items  %>%
   dplyr::filter(type == "c") %>%
   dplyr::arrange(desc(total))
 
-subset.u <- pivot %>%
+# filter items 
+subset.u <- pivot_items  %>%
   dplyr::filter(type == "u") %>%
   dplyr::arrange(desc(total))
 
-subset.e <- pivot %>%
+# filter items 
+subset.e <- pivot_items  %>%
   dplyr::filter(type == "e") %>%
   dplyr::arrange(desc(total))
 
 # create data frame
-cols.names <- c("c", "ctotal", "u", "utotal", "e", "etotal", "item") # names of columns
+cols.names <- c("item", "type", "min", "max", "mean", "total") # names of columns
 inter.df <- data.frame()
 for (col in cols.names){inter.df[[col]] <- as.numeric()}
-inter.df[nrow(inter.df)+ 10,] <- NA #add empty NAs
+inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
 
 inter.df[, 1:2] <- c(subset.c$items[1:10], subset.c$total[1:10])
 inter.df[, 3:4] <- c(subset.u$items[1:10], subset.u$total[1:10])
