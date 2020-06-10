@@ -15,6 +15,16 @@ library(data.table)
 
 ### functions
 
+# function add rank
+addRank <- function(df, dfRank){
+  df <- (merge(df, dfRank, by = 'items'))
+  df <- df %>%
+    dplyr::filter(rank < 11)
+  df <- df[order(df$rank, decreasing = FALSE), ]
+  return(df)
+}
+
+
 # function to produce summary statistics from a vector 
 data_summary <- function(x) {
   m <- mean(x)
@@ -157,6 +167,9 @@ one_anova <- function(pivot, f1){
   kruskal.pair <-
     pairwise.wilcox.test(pivot$total, factor1, p.adjust.method = "BH")
 
+  # report anova
+  report(aov(total ~ pivot[[f1]], data = pivot))
+  
   # return
   return(new("one-way",
              desc.df = desc.df,
@@ -214,8 +227,8 @@ two_anova <- function(pivot, f1, f2){
 
   # summary statistics [to be fixed]
   desc.df <-
-    pivot %>% dplyr::group_by(start_gr, category) %>%
-    dplyr::summarise(count = length(category), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE))
+    pivot %>% dplyr::group_by(!!rlang::sym(names(.)[f1]), !!rlang::sym(names(.)[f2])) %>%
+    dplyr::summarise(count = length(!!rlang::sym(names(.)[f2])), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE))
 
   ### multiple pairwise comparisons
 
@@ -570,16 +583,25 @@ pivot_items <- (merge(items.list.m, pivot_items, by = 'items'))
 subset.c <- pivot_items  %>%
   dplyr::filter(type == "c") %>%
   dplyr::arrange(desc(total))
+#create ranks df
+subset.c$rank <- c(1:length(subset.c$items))
+c.ranks <- subset.c[, c(1, 9)]
 
 # filter items 
 subset.u <- pivot_items  %>%
   dplyr::filter(type == "u") %>%
   dplyr::arrange(desc(total))
+#create ranks df
+subset.u$rank <- c(1:length(subset.u$items))
+u.ranks <- subset.u[, c(1, 9)]
 
 # filter items 
 subset.e <- pivot_items  %>%
   dplyr::filter(type == "e") %>%
   dplyr::arrange(desc(total))
+#create ranks df
+subset.e$rank <- c(1:length(subset.e$items))
+e.ranks <- subset.e[, c(1, 9)]
 
 # create data frame
 cols.names <- c("item", "type", "mean", "min", "max", "mean", "total") # names of columns
@@ -922,7 +944,7 @@ pivot <- df %>%
   dplyr::group_by(items, type) %>%
   dplyr::summarise(min = min(duration), max = max(duration), total = sum(duration), n = length(items), avg = total/n) 
 
-# ================ 3 FREQUENCY grouping ================
+# ================ 3 LISTING: GROUPING and UNIQUE ================
 
 # -------~~ all --------
 
@@ -1657,14 +1679,14 @@ pivot <- df %>%
 # resave('top.df', file='fname.RData')
 
 # ================ 4 STAGE OF USE ================
+# -------~~ data preparation --------
 
-# preparation of data [adding relative start position column]
-# add relative position column to data frame
+# preparation of data. Add relative position column to data frame
 dfR <- df
 dfR$start_rel <- rel_positions(df)
 dfR$start_gr <- as.factor(ceiling(dfR$start_rel/33.34))
 
-cat("------------------ ", "all")
+# -------~~ all --------
 
 pivot <- dfR %>%
   dplyr::group_by(session, participant, start_gr) %>%
@@ -1673,38 +1695,40 @@ pivot <- dfR %>%
 # sort data frame
 pivot[order(pivot$session, decreasing = TRUE), ]
 
-# anova
-aov.df <- aov(total ~ start_gr, data = pivot)
+# all anova
+all.aov <- one_anova(pivot, 3)
 
-# summary of the analysis
-summary(aov.df)
+# # anova
+# aov.df <- aov(total ~ start_gr, data = pivot)
+# 
+# # summary of the analysis
+# summary(aov.df)
+# 
+# # check normatlity for anova
+# # a. Homogeneity of variances
+# plot(aov.df, 1)
+# 
+# # b. Levene test (if p less than 0.5 ---> violation of assumption)
+# leveneTest(total~start_gr, data = pivot)
+# 
+# # c. check for distributions
+# ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
+# 
+# # anova assumptions are meet
+# compare_means(total ~ start_gr, data = pivot, method = "anova")
+# 
+# # plot
+# ggboxplot(pivot, x = "start_gr", y = "total",
+#           color = "start_gr", add = "jitter") +
+#   stat_compare_means() +                     # Add global p-value
+#   ggtitle("start_gr")
+# 
+# # mean and sd
+# pivot %>% dplyr::group_by(start_gr) %>%
+#   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+# cat("no significant differences")
 
-# check normatlity for anova
-# a. Homogeneity of variances
-plot(aov.df, 1)
-
-# b. Levene test (if p less than 0.5 ---> violation of assumption)
-leveneTest(total~start_gr, data = pivot)
-
-# c. check for distributions
-ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
-
-# anova assumptions are meet
-compare_means(total ~ start_gr, data = pivot, method = "anova")
-
-# plot
-ggboxplot(pivot, x = "start_gr", y = "total",
-          color = "start_gr", add = "jitter") +
-  stat_compare_means() +                     # Add global p-value
-  ggtitle("start_gr")
-
-# mean and sd
-pivot %>% dplyr::group_by(start_gr) %>%
-  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-cat("no significant differences")
-
-
-cat("------------------ ", "sessions")
+# -------~~ sessions --------
 
 # frequencies start_gr sessions
 pivot <- dfR %>%
@@ -1717,209 +1741,92 @@ pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
 # table of frequencies
 table(dfR$session, dfR$start_gr)
 
-# two-way anova
-res.aov2 <- aov(total ~ session + start_gr, data = pivot)
-summary(res.aov2)
+# all anova two way
+two.aov <- two_anova(pivot, 1, 3)
 
-# two-way ANOVA with interaction effect
-res.aov3 <- aov(total ~ session * start_gr, data = pivot)
-summary(res.aov3)
+# # two-way anova
+# res.aov2 <- aov(total ~ session + start_gr, data = pivot)
+# summary(res.aov2)
+# 
+# # two-way ANOVA with interaction effect
+# res.aov3 <- aov(total ~ session * start_gr, data = pivot)
+# summary(res.aov3)
+# 
+# # plot
+# ggboxplot(pivot, x = "start_gr", y = "total", color = "session", add = "jitter") +
+#   stat_compare_means() + ggtitle("start_gr")
+# 
+# # mean and sd
+# pivot %>% dplyr::group_by(session, start_gr) %>%
+#   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+# 
+# # model summary
+# model.tables(res.aov3, type="means", se = TRUE)
+# 
+# # [a] multiple pairwise comparisons
+# TukeyHSD(res.aov3, which = "session")
+# TukeyHSD(res.aov3, which = "start_gr")
+# # comparing factors
+# TukeyHSD(res.aov3, which = "session:start_gr")
+# 
+# # [b]
+# summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
+# summary(glht(res.aov2, linfct = mcp(session= "Tukey")))
+# 
+# # [c]
+# pairwise.t.test(pivot$total, pivot$start_gr, p.adjust.method = "BH")
+# 
+# # check the normality assumption
+# 
+# # normality
+# plot(res.aov3, 2)
+# 
+# # extract the residuals
+# aov_residuals <- residuals(object = res.aov3)
+# 
+# # run Shapiro-Wilk test
+# shapiro.test(x = aov_residuals )
 
-# plot
-ggboxplot(pivot, x = "start_gr", y = "total", color = "session", add = "jitter") +
-  stat_compare_means() + ggtitle("start_gr")
+# -------~~ type --------
 
-# mean and sd
-pivot %>% dplyr::group_by(session, start_gr) %>%
-  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-
-# model summary
-model.tables(res.aov3, type="means", se = TRUE)
-
-# [a] multiple pairwise comparisons
-TukeyHSD(res.aov3, which = "session")
-TukeyHSD(res.aov3, which = "start_gr")
-# comparing factors
-TukeyHSD(res.aov3, which = "session:start_gr")
-
-# [b]
-summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
-summary(glht(res.aov2, linfct = mcp(session= "Tukey")))
-
-# [c]
-pairwise.t.test(pivot$total, pivot$start_gr, p.adjust.method = "BH")
-
-# check the normality assumption
-
-# normality
-plot(res.aov3, 2)
-
-# extract the residuals
-aov_residuals <- residuals(object = res.aov3)
-
-# run Shapiro-Wilk test
-shapiro.test(x = aov_residuals )
-
-cat("no significant differences of interaction")
-
-cat("------------------ ", "type")
-
-# frequencies start_gr sessions
-
-two_anova_v0 <- function(pivot){
-
-  # two-way anova
-  res.aov2 <- aov(total ~ type + start_gr, data = pivot)
-  summary(res.aov2)
-
-  # two-way ANOVA with interaction effect
-  res.aov3 <- aov(total ~ type * start_gr, data = pivot)
-  summary(res.aov3)
-
-  # plot
-  ggboxplot(pivot, x = "start_gr", y = "type", color = "type", add = "jitter") +
-    stat_compare_means() + ggtitle("start_gr")
-
-  # mean and sd
-  pivot %>% dplyr::group_by(type, start_gr) %>%
-    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-
-  # model summary
-  model.tables(res.aov3, type="means", se = TRUE)
-
-  # [a] multiple pairwise comparisons
-  # TukeyHSD(res.aov3, which = "type")
-  TukeyHSD(res.aov3, which = "start_gr")
-  # comparing factors
-  TukeyHSD(res.aov3, which = "type:start_gr")
-
-  # [b]
-  summary(glht(res.aov2, linfct = mcp(start_gr= "Tukey")))
-  summary(glht(res.aov2, linfct = mcp(type= "Tukey")))
-
-  # [c]
-  pairwise.t.test(pivot$total, pivot$start_gr, p.adjust.method = "BH")
-
-  # check the normality assumption
-
-  # homogeneity of variances
-  plot(res.aov3, 1)
-
-  # levene's test
-  leveneTest(total ~ type*start_gr, data = pivot)
-
-  # normality
-  plot(res.aov3, 2)
-
-  # extract the residuals
-  aov_residuals <- residuals(object = res.aov3)
-  # run Shapiro-Wilk test
-  shapiro.test(x = aov_residuals )
-
-  ### normality assumptions break
-
-
-  ### anova for unbalanced designs
-  aov.ud <- aov(total ~ type * start_gr, data = pivot)
-  Anova(aov.ud, type = "III")
-
-  # mean and sd
-  pivot %>% dplyr::group_by(type, start_gr) %>%
-    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-}
-
-one_anova_v0 <- function(pivot){
-
-  # anova
-  aov.df <- aov(total ~ start_gr, data = pivot)
-
-  # summary of the analysis
-  summary(aov.df)
-
-  # anova report
-  aov_results <- aov(total ~ start_gr, data = pivot)
-  report(aov_results)
-
-  # check normatlity for anova
-  # a. Homogeneity of variances
-  plot(aov.df, 1)
-
-  # b. Levene test (if p less than 0.5 ---> violation of assumption)
-  leveneTest(total~start_gr, data = pivot)
-
-  # c. check for distributions
-  ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
-
-  # anova assumptions are meet
-  compare_means(total ~ start_gr, data = pivot, method = "anova")
-
-  ### anova assumptions are not meet
-  kruskal.test(total ~ start_gr, data = pivot)
-
-  # find wich pairs are different
-  pairwise.wilcox.test(pivot$total, pivot$start_gr,
-                       p.adjust.method = "BH")
-  # global test
-  compare_means(total ~ start_gr,  data = pivot)
-
-  # if significant do a dunn's test
-  dunnTest(total~start_gr, data = pivot)
-
-  # anova for unbalanced designs
-  aov.ud <- aov(len ~ supp * dose, data = pivot)
-  Anova(pivot, type = "III")
-
-  # plot
-  ggboxplot(pivot, x = "start_gr", y = "total",
-            color = "start_gr", add = "jitter") +
-    stat_compare_means() +                     # Add global p-value
-    ggtitle("start_gr")
-
-  # mean and sd
-  pivot %>% dplyr::group_by(start_gr) %>%
-    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-
-}
-
-# INTERACTIONS - data preparation to use anova
+# INTERACTIONS
 pivot <- dfR %>%
-  # dplyr::filter(type =="c") %>% # comment for two way anova
   dplyr::group_by(type, p_corrected, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
 
-# GROUPING - items
+# GROUPING
 pivot <- dfR %>%
   dplyr::distinct(items, type, p_corrected, start_gr) %>%
   dplyr::group_by(type, p_corrected, start_gr) %>%
   dplyr::summarise(total = length(start_gr))
 
-# UNIQUE - items
+# UNIQUE
 pivot <- dfR %>%
   dplyr::distinct(items, items_uniq, type, p_corrected, start_gr) %>%
   dplyr::group_by(type, p_corrected, start_gr) %>%
   dplyr::summarise(total = length(start_gr))
 
-cat("no differences by start_gr")
-
-
-### items average
+# ITEMS AVERAGE
 pivot <- dfR %>%
   dplyr::group_by(items, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
 
+# -------~~~~ type anovas --------
 
+# all anova two way
+two.aov <- two_anova(pivot, 1, 3)
 
-cat("------------------ ", "categories")
-### set factors
-f1 <- 3
-f2 <- 1
+# all anova
+all.aov <- one_anova(pivot, 1)
+# all anova
+all.aov <- one_anova(pivot, 3)
 
+# -------~~ categories --------
 # INTERACTIONS
 pivot <- dfR %>%
   dplyr::filter(type =="c") %>% # comment for two way anova
   dplyr::group_by(category, p_corrected, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
-
 
 # INTERACTIONS PERCENTAGE
 pivot <- dfR %>%
@@ -1927,142 +1834,244 @@ pivot <- dfR %>%
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 0)))
 
-# GROUPING - items
+# GROUPING
 pivot <- dfR %>%
   dplyr::filter(type =="c") %>%
   dplyr::distinct(items, type, p_corrected, start_gr) %>%
   dplyr::group_by(type, p_corrected, start_gr) %>%
   dplyr::summarise(total = length(start_gr))
 
-# UNIQUE - items
+# UNIQUE
 pivot <- dfR %>%
   dplyr::filter(type =="c") %>%
   dplyr::distinct(items, items_uniq, type, p_corrected, start_gr) %>%
   dplyr::group_by(type, p_corrected, start_gr) %>%
   dplyr::summarise(total = length(start_gr))
 
-### anova report [fast report]
+# -------~~ categories anovas --------
 
-# interactions
-aov_results <- aov(total ~ pivot[[f1]]*pivot[[f2]], data = pivot)
-report(aov_results)
+# all anova two way
+two.aov <- two_anova(pivot, 1, 3)
 
-# factor 1
-aov_results <- report(aov(total ~ pivot[[f1]], data = pivot))
+# all anova
+all.aov <- one_anova(pivot, 1)
+# all anova
+all.aov <- one_anova(pivot, 3)
 
-# factor 2
-aov_results <- report(aov(total ~ pivot[[f2]], data = pivot))
+# -------~~ data most items --------
 
-cat("------------------ ", "data frame most items")
-
-# prepare data
+# INTERACTIONS - ITEMS
 pivot <- dfR %>%
-  dplyr::group_by(category, start_gr) %>%  # remove type for two way anova
+  dplyr::group_by(items, items_uniq, p_corrected, category, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr)) %>%
+  dplyr::group_by(items, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = sum(total))
+  
+# INTERACTIONS - CATEGORIES
+pivot <- dfR %>%
+  dplyr::group_by(category, type, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
 
+# INTERACTIONS PERCENTAGE - ITEMS
 pivot <- dfR %>%
-  dplyr::group_by(category, start_gr) %>%  # remove type for two way anova
+  dplyr::group_by(items, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = n()) %>%
+  dplyr::mutate(per = (round(total/sum(total)*100, 1)))
+
+# INTERACTIONS PERCENTAGE - CATEGORIES
+pivot <- dfR %>%
+  dplyr::group_by(category, type, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(per = (round(n/sum(n)*100, 1)))
 
+# ITEM
 pivot <- dfR %>%
   dplyr::filter(items == "oil") %>%
   dplyr::group_by(p_corrected, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 1)))
 
-
-report(aov(total ~ pivot[[2]], data = pivot))
-
+# subset data
 subset.c <- pivot %>%
-  dplyr::filter(type == "c") %>%
-  dplyr::arrange(desc(total))
+  dplyr::filter(type == "c")
+# add ranks to subset.c from interactions 
+subset.c <- addRank(subset.c, c.ranks)
 
 subset.u <- pivot %>%
-  dplyr::filter(type == "u") %>%
-  dplyr::arrange(desc(total))
+  dplyr::filter(type == "u")
+# add ranks to subset.e from interactions 
+subset.u <- addRank(subset.u, u.ranks)
 
 subset.e <- pivot %>%
-  dplyr::filter(type == "e") %>%
-  dplyr::arrange(desc(total))
+  dplyr::filter(type == "e")
+# add ranks to subset.c
+subset.e <- addRank(subset.e, e.ranks)
 
 # create data frame
-cols.names <- c("c", "ctotal", "u", "utotal", "e", "etotal", "item") # names of columns
-top.df <- data.frame()
-for (col in cols.names){top.df[[col]] <- as.numeric()}
-top.df[nrow(top.df)+ 10,] <- NA #add empty NAs
+cols.names <- c("item", "type", "section", "total", "percentage")
+inter.df <- data.frame()
+for (col in cols.names){inter.df[[col]] <- as.numeric()}
+inter.df[nrow(inter.df)+ 90,] <- NA #add empty NAs
+# set cols data frame
+cols.df <- c(1, 2, 3, 4, 5)
 
-top.df[, 1:2] <- c(subset.c$items[1:10], subset.c$total[1:10])
-top.df[, 3:4] <- c(subset.u$items[1:10], subset.u$total[1:10])
-top.df[, 5:6] <- c(subset.e$items[1:10], subset.e$total[1:10])
-top.df$item <- c(1:10)
+inter.df[1:30, c(1:5)] <- subset.c[1:30, cols.df]
+inter.df[31:60, c(1:5)] <- subset.u[1:30, cols.df]
+inter.df[61:90, c(1:5)] <- subset.e[1:30, cols.df]
 
-# re-order columns
-top.df <- top.df %>%
-  dplyr::select(item, everything())
+### change data frame to fit printing 
+inter.df1 <- inter.df %>%
+  dplyr::filter(section == 1)
+
+inter.df2 <- inter.df %>%
+  dplyr::filter(section == 2)
+
+inter.df3 <- inter.df %>%
+  dplyr::filter(section == 3)
+
+inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 
 # ================ 5 ITEMS SEQUENCE / ITEMS AROUND ================
 
 # bef <- items_around_n("salt", "both", "bef")
 # dur <- items_around_n("salt", "both", "in")
 # aft <- items_around_n("salt", "both", "aft")
+
+# test <- bef$items.intv
+# 
+# pivot <- test %>%
+#   dplyr::filter(distance > -3 & distance < 0) %>%
+#   dplyr::group_by(item_n) %>%
+#   dplyr::summarise(count = n())
 # 
 # bef.summ <- around_summary_ouput("both", "bef", 2)
 # dur.summ <- around_summary_ouput("both", "in", 2)
 # aft.summ <- around_summary_ouput("both", "aft", 2)
 
-# load  data files from RData
-bef.summ
-in.summ
-aft.summ
+# -------~~ data preparation --------
 
-test <- bef$items.intv
+load(file='fname.RData')
+bef <- bef.summ
+conc <- in.summ
+aft <- aft.summ
 
-pivot <- test %>%
-  dplyr::filter(distance > -3 & distance < 0) %>%
-  dplyr::group_by(item_n) %>%
-  dplyr::summarise(count = n())
+# change name df
+names(bef)[1] <- "items"
+names(conc)[1] <- "items"
+names(aft)[1] <- "items"
 
-# ================ 5 ITEMS SEQUENCE / ITEMS AROUND [BEFORE] ================
+# add rank to data frames
+c.rank <-  subset.c[, c(1,9)]
+u.rank <-  subset.u[, c(1,9)]
+e.rank <-  subset.e[, c(1,9)]
+all.ranks <- rbind(c.rank, u.rank, e.rank)
+
+# add ranks to data frames
+# vlookup like function in t
+bef <- (merge(all.ranks, bef, by = 'items'))
+conc <- (merge(all.ranks, conc, by = 'items'))
+aft <- (merge(all.ranks, aft, by = 'items'))
+
+# add type and category to data frames
+items.m <- items.list
+names(items.m)[1] <- "items"
+# vlookup like function in t
+bef <- (merge(items.m, bef, by = 'items'))
+conc <- (merge(items.m, conc, by = 'items'))
+aft <- (merge(items.m, aft, by = 'items'))
+
+# add categories & type
+
+bef.cat <- bef
+inner_join(bef.cat, items.m, by = c('set1', 'category'))
+
+bef.cat %>% inner_join(items.m)
+bef.cat$set1C <- items.m$category[match(bef.cat$set1, items.m$items)]
+bef.cat$set2C <- items.m$category[match(bef.cat$set2, items.m$items)]
+bef.cat$set3C <- items.m$category[match(bef.cat$set3, items.m$items)]
+bef.cat$set4C <- items.m$category[match(bef.cat$set4, items.m$items)]
+
+bef.cat$set1t <- items.m$type[match(bef.cat$set1, items.m$items)]
+bef.cat$set2t <- items.m$type[match(bef.cat$set2, items.m$items)]
+bef.cat$set3t <- items.m$type[match(bef.cat$set3, items.m$items)]
+bef.cat$set4t <- items.m$type[match(bef.cat$set4, items.m$items)]
+
+# -------~~ summary statistics --------
+
+# subset data frame
+bef.sub <- bef.cat[, c(1:4, 11:16)]
+
+
+# melt bef.sub
+bef.melt <- melt(bef.sub, id = c("type", "rank"))
+
+
+# summary bef.sub
+pivot <- bef.sub %>%
+  dplyr::filter(type == "c") %>%
+  dplyr::group_by(category) %>%
+  dplyr::count(set2C) %>%
+  dplyr::mutate(prop = prop.table(n)*100)
+
+
+# summary all items
+pivot <- bef.cat %>%
+  dplyr::filter(rank < 11) %>%
+  dplyr::group_by(items, type) %>%
+  dplyr::count(set2C) %>%
+  dplyr::mutate(prop = prop.table(n)*100)
+
+
+# subset most commons 
+pivot <- bef %>%
+  dplyr::filter(rank < 11)
+
+pivot <- conc %>%
+  dplyr::filter(rank < 11)
+
+
+
+
+
 
 # ================ 6 PLACES ================
+# -------~~ df places --------
 
-### create a matrix of frequencies
+# create df for places
+df.places <- as.data.frame(table(places.list$item, places.list$place))
+names(df.places)[1:3] <- c("item", "place", "count")
+df.places <- dcast(places.list, item~place)
 
-# prepare data
-df.p <- as.data.frame(table(places.list$item, places.list$place))
-names(df.p)[1:3] <- c("item", "place", "count")
+# get percentages
+cols.mat <- length(df.places)
+for (i in seq_along(df.places$item)){
+  df.places[i, 2:cols.mat] <- round((df.places[i, 2:cols.mat]/sum(df.places[i, 2:cols.mat])*100), digits = 0)}
 
-# create a matrix
-mt.p <- dcast(places.list, item~place)
-
-# get percentage
-cols.mt <- length(mt.p)
-for (i in seq_along(mt.p$item)){
-  mt.p[i, 2:cols.mt] <- round((mt.p[i, 2:cols.mt]/sum(mt.p[i, 2:cols.mt])*100), digits = 0)}
-
-# get type list
+# get types to add to list
 types <-  places.list %>%
   dplyr::group_by(type, item) %>%
   dplyr::distinct(type, items)
 
-# add column to data frame
-df.places <- cbind(types[1], mt.p)
+# add column to mat.places
+df.places <- cbind(types[1], df.places)
+# sort df. places
+df.places <- df.places[order(df.places$type, decreasing = FALSE), ]
 
-### summary statistics
+# -------~~ summary statistics --------
 
-### get table of percentages
+### places per item and mean 
 pivot <-  places.list %>%
   dplyr::distinct(item, place, type) %>%
   dplyr::group_by(type, item) %>%
   dplyr::count(item)
 
-# get means by type
+# get means by type of the above pivot df
 pivot %>%
   dplyr::group_by(type) %>%
   dplyr::summarise(avg = mean(n))
 
-### tranform matrix into data fram
+
+### transform matrix into data fram
 m.places <- melt(df.places, id=(c("item", "type")))
 names(m.places)[3:4] <- c("place", "value")
 
@@ -2071,26 +2080,27 @@ pivot <- m.places %>%
   dplyr::group_by(place, type) %>%
   dplyr::summarise(avg = mean(value))
 
-
-
-
-
 # ================ 7 FORMS ================
+# -------~~ prepare data --------
+
 # prepare data frame
 pivot <- forms.list %>%
   dplyr::distinct(type, item, form) %>%
-  dplyr::group_by(type) %>%
-  dplyr::summarise(total= n())
+  dplyr::group_by(item, type) %>%
+  dplyr::summarise(total = n())
 
-# prepare data frame
+# add percentages to data frame
 pivot <- forms.list %>%
   dplyr::group_by(type, item, form) %>%
-  dplyr::summarise(total= n())
+  dplyr::summarise(total= n()) %>%
+  dplyr::mutate(per = (round(total/sum(total)*100, 1)))
+
 
 # ================ 8 ACTIVITIES ================
-# prepare data frame
+# -------~~ prepare data --------
+
 pivot <- activities.list %>%
-  dplyr::group_by(item, activity) %>%
+  dplyr::group_by(type, item, activity) %>%
   dplyr::summarise(total= n())
 
 pivot <- activities.list %>%
@@ -2098,9 +2108,8 @@ pivot <- activities.list %>%
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 0)))
 
-
 # ================ [9] SITUATIONS [PROBLEMS AND REMARKABLE] ================
-# ================ [8] CONSUMPTION ================
+# ================ [10] CONSUMPTION ================
 # prepare data frame
 pivot <- df %>%
   dplyr::select(items, items_uniq, p_corrected) %>%
@@ -2108,5 +2117,5 @@ pivot <- df %>%
   dplyr::summarise(total = length(items))
 
 
-# ================ [10] NETWORKS ================
-# ================ [11] PEOPLES' OBSERVATIONs ================
+# ================ [11] NETWORKS ================
+# ================ [12] PEOPLES' OBSERVATIONs ================
