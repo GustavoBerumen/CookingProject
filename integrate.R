@@ -23,8 +23,6 @@ source("./R/process-items.R")
 # get descriptive stats of items
 source("./R/video-instances.R")
 
-
-
 ### test 
 
 items.long <- c("stove", "oven", "extractorFan", "kettle", "microwave", "coffeeMachine", "riceCooker", "dishWasher",

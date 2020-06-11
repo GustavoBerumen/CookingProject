@@ -153,7 +153,25 @@ names(items.list.m)[1] <- "items"
 reg.new.con.cat <- (merge(items.list.m, reg.new.concat, by = 'items'))
 reg.new.con.cat <- reg.new.con.cat[order(reg.new.con.cat$p_corrected, reg.new.con.cat$order),]
 #re-order columns
-reg.new.con.cat <- reg.new.con.cat[, c(3, 1,4, 2, 5:9, 11:13, 10)]
+#reg.new.con.cat <- reg.new.con.cat[, c(3, 1,4, 2, 5:9, 11:13, 10)]
+
+
+# add items number to reg.new.concat
+items.list$item.number <- c(1:length(items.list$unique))
+items.list.n <-  items.list[, c(1,4)]
+names(items.list.n)[1] <- "items"
+# save category
+df.cat <- reg.new.con.cat$category
+# vlookup like function in t
+reg.new.con.cat <- (merge(items.list.n, reg.new.concat, by = 'items'))
+# add category
+reg.new.con.cat$category <- df.cat
+
+reg.new.con.cat <- reg.new.con.cat[order(reg.new.con.cat$p_corrected, reg.new.con.cat$order),]
+#re-order columns
+reg.new.con.cat <- reg.new.con.cat[, c(3, 2, 1,4:5, 14, 6:9, 11:12, 13, 10)]
+
+
 
 
 #return to working directory

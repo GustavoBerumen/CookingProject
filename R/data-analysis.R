@@ -15,6 +15,12 @@ library(data.table)
 
 ### functions
 
+# copy data frame
+cb <- function(df, sep="\t", dec=",", max.size=(200*1000)){
+  # Copy a data.frame to clipboard
+  write.table(df, paste0("clipboard-", formatC(max.size, format="f", digits=0)), sep=sep, row.names=FALSE, dec=dec)
+}
+
 # function add rank
 addRank <- function(df, dfRank){
   df <- (merge(df, dfRank, by = 'items'))
@@ -602,6 +608,8 @@ subset.e <- pivot_items  %>%
 #create ranks df
 subset.e$rank <- c(1:length(subset.e$items))
 e.ranks <- subset.e[, c(1, 9)]
+
+all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
 
 # create data frame
 cols.names <- c("item", "type", "mean", "min", "max", "mean", "total") # names of columns
@@ -1931,7 +1939,7 @@ inter.df3 <- inter.df %>%
 
 inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 
-# ================ 5 ITEMS SEQUENCE / ITEMS AROUND ================
+# ================ 5 ITEMS SEQUENCE ================
 
 # bef <- items_around_n("salt", "both", "bef")
 # dur <- items_around_n("salt", "both", "in")
@@ -1948,6 +1956,7 @@ inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 # dur.summ <- around_summary_ouput("both", "in", 2)
 # aft.summ <- around_summary_ouput("both", "aft", 2)
 
+# -------~~ before --------
 # -------~~ data preparation --------
 
 load(file='fname.RData')
@@ -2030,10 +2039,6 @@ pivot <- conc %>%
   dplyr::filter(rank < 11)
 
 
-
-
-
-
 # ================ 6 PLACES ================
 # -------~~ df places --------
 
@@ -2109,13 +2114,269 @@ pivot <- activities.list %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 0)))
 
 # ================ [9] SITUATIONS [PROBLEMS AND REMARKABLE] ================
-# ================ [10] CONSUMPTION ================
+# ================ [10] PEOPLES' OBSERVATIONs ================
+# ================ [11] CONSUMPTION ================
 # prepare data frame
 pivot <- df %>%
   dplyr::select(items, items_uniq, p_corrected) %>%
   dplyr::group_by(items, items_uniq) %>%
   dplyr::summarise(total = length(items))
 
+# ================ [12] NETWORKS ================
+# -------~~ prepare data Items --------
 
-# ================ [11] NETWORKS ================
-# ================ [12] PEOPLES' OBSERVATIONs ================
+# prepare data frame
+pivot <- df %>%
+  dplyr::distinct(item.number, p_corrected)
+
+pivot <- df %>%
+  dplyr::distinct(category, type, p_corrected)
+
+
+#create data frame to add data
+edge.df <- data.frame()
+
+for (i in 1: max(pivot$p_corrected)){
+  
+  pivotEdge <- pivot %>%
+    dplyr::filter(p_corrected == i)
+  
+  #create edge list
+  edgelist <- expand.grid(from = pivotEdge$item.number, to = pivotEdge$item.number, w =  1 / length(pivotEdge$item.number), p = i)
+
+  # add edgelist to dataframe
+  edge.df <- rbind(edge.df, edgelist)
+  
+  print(i)
+}
+
+#transfer pivot df to other df
+edgelist <- edge.df
+#add number to items.list.m
+items.data <- items.list 
+items.data$item.number <- c(1:length(items.data$unique))
+
+# add item and category to data frame 
+edgelist$fromI <- df$items[match(edgelist$from, df$item.number)]
+edgelist$toI <- df$items[match(edgelist$to, df$item.number)]
+edgelist$rank <- all.ranks$rank[match(edgelist$fromI, all.ranks$items)]
+edgelist$fromT <- df$type[match(edgelist$fromI, df$items)]
+edgelist$toT <- df$type[match(edgelist$toI, df$items)]
+edgelist$fromC <- df$category[match(edgelist$fromI, df$items)]
+edgelist$toC <- df$category[match(edgelist$toI, df$items)]
+edgelist$equal <- edgelist$from-edgelist$to
+
+
+# resave(edgelist, file = "fname.RData")
+# load("fname.RData")
+
+# -------~~ summary statistics Items --------
+
+# frequency based on two columns 
+
+edge.df2 <- edgelist
+
+# filter equal 
+edge.df2 <- edgelist %>%
+  dplyr::filter(equal !=0)
+
+
+# working pivot 
+pivot <- edge.df2 %>%
+  dplyr::group_by(fromC, toC) %>%
+  dplyr::summarise(count = n()) %>% 
+  dplyr::filter(fromC %in% c("spice")) %>% 
+  dplyr::mutate(rank = dense_rank(desc(count))) %>%  
+  dplyr::filter(rank < 6)
+
+# prepare for visualisation
+pivot$count <- pivot$count/100
+# capitalize from. This is necessary for the sankey diagram
+pivot$fromC <- capitalize(pivot$fromC)
+
+
+
+# # working plot add ranks 
+# pivot <- edge.df2 %>%
+#   dplyr::group_by(fromI, toI) %>%
+#   dplyr::summarise(count = n()) %>% 
+#   dplyr::filter(count > 30) %>%  
+#   dplyr::filter(fromI %in% c("salt", "cheese", "oil")) %>% 
+#   dplyr::mutate(rank = dense_rank(desc(count)))
+# 
+# pivot <- edge.df2 %>%
+#   dplyr::filter(rank < 11) %>% 
+#   dplyr::group_by(fromI, toI, rank) %>%
+#   dplyr::summarise(count = n()) %>% 
+#   dplyr::filter(count > 32)
+
+
+
+
+# -------~~ sankey diagram Items --------
+# Package
+library(networkD3)
+library(tidyverse)
+
+# # I need a long format
+# data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/13_AdjacencyDirectedWeighted.csv", header=TRUE)
+# 
+# data_long <- data %>%
+#   rownames_to_column %>%
+#   gather(key = 'key', value = 'value', -rowname) %>%
+#   filter(value > 0)
+# colnames(data_long) <- c("source", "target", "value")
+# data_long$target <- paste(data_long$target, " ", sep="")
+
+###
+names(pivot)[1:3] <- c("source", "target", "value")
+data_long <- pivot
+
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+# prepare colour scale
+ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+
+# Make the Network
+sankeyNetwork(Links = data_long, Nodes = nodes,
+              Source = "IDsource", Target = "IDtarget",
+              Value = "value", NodeID = "name", 
+              sinksRight=FALSE, colourScale=ColourScal, nodeWidth=20, fontSize=13, nodePadding=10)
+
+
+
+
+
+
+# -------~~ prepare data Category --------
+
+# prepare data frame
+pivot <- df %>%
+  dplyr::distinct(category, type, p_corrected)
+
+#create data frame to add data
+edge.df <- data.frame()
+
+# create data frame of concurrencies 
+for (i in 1: max(pivot$p_corrected)){
+  pivotEdge <- pivot %>%
+    dplyr::filter(p_corrected == i)
+  
+  #create edge list
+  edgelist <- expand.grid(from = pivotEdge$category, to = pivotEdge$category, w =  1 / length(pivotEdge$category), p = i)
+
+  # add edgelist to dataframe
+  edge.df <- rbind(edge.df, edgelist)
+}
+
+#transfer pivot df to other df
+edgelist <- edge.df
+
+#add number to items.list.m
+items.data <- items.list 
+items.data$item.number <- c(1:length(items.data$unique))
+
+# add item and category to data frame 
+edgelist$fromI <- df$items[match(edgelist$from, df$item.number)]
+edgelist$toI <- df$items[match(edgelist$to, df$item.number)]
+edgelist$rank <- all.ranks$rank[match(edgelist$fromI, all.ranks$items)]
+edgelist$fromT <- df$type[match(edgelist$fromI, df$items)]
+edgelist$toT <- df$type[match(edgelist$toI, df$items)]
+edgelist$fromC <- df$category[match(edgelist$fromI, df$items)]
+edgelist$toC <- df$category[match(edgelist$toI, df$items)]
+edgelist$equal <- edgelist$from-edgelist$to
+
+
+# resave(edgelist, file = "fname.RData")
+# load("fname.RData")
+
+# -------~~ summary statistics Category --------
+
+# frequency based on two columns 
+
+edge.df2 <- edgelist
+
+# filter equal 
+edge.df2 <- edgelist %>%
+  dplyr::filter(equal !=0)
+
+
+# working pivot 
+pivot <- edge.df2 %>%
+  dplyr::group_by(from, to) %>%
+  dplyr::summarise(count = n()) %>% 
+  dplyr::filter(from %in% c("spice")) %>% 
+  dplyr::mutate(rank = dense_rank(desc(count))) %>%  
+  dplyr::filter(rank < 6)
+
+# prepare for visualisation
+pivot$count <- pivot$count/100
+# capitalize from. This is necessary for the sankey diagram
+pivot$from <- capitalize(as.character(pivot$from))
+
+
+# # working plot add ranks 
+# pivot <- edge.df2 %>%
+#   dplyr::group_by(fromI, toI) %>%
+#   dplyr::summarise(count = n()) %>% 
+#   dplyr::filter(count > 30) %>%  
+#   dplyr::filter(fromI %in% c("salt", "cheese", "oil")) %>% 
+#   dplyr::mutate(rank = dense_rank(desc(count)))
+# 
+# pivot <- edge.df2 %>%
+#   dplyr::filter(rank < 11) %>% 
+#   dplyr::group_by(fromI, toI, rank) %>%
+#   dplyr::summarise(count = n()) %>% 
+#   dplyr::filter(count > 32)
+
+
+# -------~~ sankey diagram Categories --------
+# Package
+library(networkD3)
+library(tidyverse)
+
+# # I need a long format
+# data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/13_AdjacencyDirectedWeighted.csv", header=TRUE)
+# 
+# data_long <- data %>%
+#   rownames_to_column %>%
+#   gather(key = 'key', value = 'value', -rowname) %>%
+#   filter(value > 0)
+# colnames(data_long) <- c("source", "target", "value")
+# data_long$target <- paste(data_long$target, " ", sep="")
+
+###
+names(pivot)[1:3] <- c("source", "target", "value")
+data_long <- pivot
+
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+# prepare colour scale
+ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+
+# Make the Network
+sankeyNetwork(Links = data_long, Nodes = nodes,
+              Source = "IDsource", Target = "IDtarget",
+              Value = "value", NodeID = "name", 
+              sinksRight=FALSE, colourScale=ColourScal, nodeWidth=20, fontSize=13, nodePadding=10)
+
+
+
+
+
+
+
+
+
+
+
