@@ -15,6 +15,15 @@ library(data.table)
 
 ### functions
 
+# find greater smaller than 0.05
+sigCount <- function(sigVec){
+  vc.true <- length(sigVec[sigVec == TRUE])
+  vc.len <- length(sigVec)
+  
+  return(c("vc.true: ", vc.true, "vc.len:", vc.len))
+}
+
+
 # copy data frame
 cb <- function(df, sep="\t", dec=",", max.size=(200*1000)){
   # Copy a data.frame to clipboard
@@ -84,14 +93,18 @@ setClass(Class="one-way",
          representation(
            desc.df ="ANY",
            desc.pl ="ANY",
+           res.aov = "ANY",
            aov.summ ="ANY",
            aov.tukey ="ANY",
            aov.glh = "ANY",
            aov.pair ="ANY",
+           qq.pl ="ANY",
+           homog.pl ="ANY",
            levene ="ANY",
            shapiro ="ANY",
            kruskal.summ ="ANY",
-           kruskal.pair ="ANY"))
+           kruskal.pair ="ANY",
+           dunn.test = "ANY"))
 
 ### one way anova
 one_anova <- function(pivot, f1){
@@ -137,9 +150,13 @@ one_anova <- function(pivot, f1){
   try(aov.pair <- pairwise.t.test(pivot$total, pivot[[f1]], p.adjust.method = "BH"))
 
   ### check the normality assumption
+  
+  # [0] qqplot
+  qq.pl <- ggqqplot(pivot$total)
 
   # [1] homogeneity of variances
   plot(res.aov, 1)
+  homog.pl <- recordPlot()
 
   # [2] levene's test
   levene <-
@@ -149,7 +166,6 @@ one_anova <- function(pivot, f1){
   # no assumptions of equal variances
   # oneway.test(total ~ factor1, data = pivot)
 
-  
   # pairwise t-tests with no assumption of equal variances
   #pairwise.t.test(pivot$total, factor1,
   #                p.adjust.method = "BH", pool.sd = FALSE)
@@ -176,17 +192,24 @@ one_anova <- function(pivot, f1){
   # report anova
   report(aov(total ~ pivot[[f1]], data = pivot))
   
+  # dunn's test
+  dunn.test <- dunnTest(total~factor1, data = pivot)
+  
   # return
   return(new("one-way",
              desc.df = desc.df,
              desc.pl = desc.pl,
+             res.aov = res.aov, 
              aov.summ = aov.summ,
              aov.tukey = aov.tukey,
              aov.pair = aov.pair,
+             qq.pl = qq.pl,
+             homog.pl = homog.pl,
              levene = levene,
              shapiro = shapiro,
              kruskal.summ = kruskal.summ,
-             kruskal.pair = kruskal.pair
+             kruskal.pair = kruskal.pair,
+             dunn.test = dunn.test
              ))
 }
 
@@ -196,6 +219,8 @@ setClass(Class="two-way",
          representation(
            desc.df ="ANY",
            desc.pl ="ANY",
+           res.aov2 ="ANY",
+           res.aov3 ="ANY",
            aov2.summ ="ANY",
            aov3.summ ="ANY",
            aov.tukey ="ANY",
@@ -279,7 +304,9 @@ two_anova <- function(pivot, f1, f2){
   return(new("two-way",
              desc.df = desc.df,
              desc.pl = desc.pl,
+             res.aov2 = res.aov2, 
              aov2.summ = aov2.summ,
+             res.aov3 = res.aov3, 
              aov3.summ = aov3.summ,
              aov.tukey = aov.tukey,
              aov.tukey.int = aov.tukey.int,
@@ -956,6 +983,8 @@ pivot <- df %>%
 
 # -------~~ all --------
 
+### grouping
+
 # items presence in sessions
 pivot <- df %>%
   dplyr::group_by(items, session, participant) %>%
@@ -963,10 +992,12 @@ pivot <- df %>%
   dplyr::group_by(items) %>%
   dplyr::count(items)
 
+### unique
+
 # number of items per session
 pivot <- df %>%
-  dplyr::group_by(items, session, p_corrected) %>%
-  dplyr::distinct(items) %>%
+  dplyr::group_by(items, items_uniq, session, p_corrected) %>%
+  dplyr::distinct(items, items_uniq) %>%
   dplyr::group_by(p_corrected) %>%
   dplyr::count(p_corrected)
 
@@ -999,7 +1030,8 @@ ggqqplot(pivot$total)
 # normality was met 
 
 # normality was met
-t.test(total ~ session, pivot, paired=TRUE)
+model.t<- t.test(total ~ session, pivot, paired=TRUE)
+report(model.t)
 
 # visualize groups 
 pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
@@ -1014,7 +1046,6 @@ t.summary <- pivot %>%                          # Specify data frame
 
 
 # -------~~ type --------
-
 
 ### grouping
 pivot <- df %>%
@@ -1031,14 +1062,13 @@ pivot <- df %>%
   dplyr::distinct(items, items_uniq) %>%
   dplyr::summarise(total = length(p_corrected))
 
-
 # re-order type
 pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
 all.aov<- one_anova(pivot, 1)
 
 # # anova
-# aov.df <- aov(total ~ type, data = pivot)
+aov.df <- aov(total ~ type, data = pivot)
 # 
 # # summary of the analysis
 # summary(aov.df)
@@ -1046,12 +1076,12 @@ all.aov<- one_anova(pivot, 1)
 # # check normatlity for anova
 # # a. Homogeneity of variances
 # plot(aov.df, 1)
-# 
+## 
 # # b. Levene test (if p less than 0.5 ---> violation of assumption)
 # leveneTest(total~type, data = pivot)
 # 
 # # c. check for distributions
-# ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
+ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
 # 
 # # anova assumptions are not meet
 # kruskal.test(total ~ type, data = pivot)
@@ -1124,6 +1154,9 @@ pivot.sub <- pivot %>%
 # anova summary class
 all.aov <- one_anova(pivot.sub, 1)
 
+# count significants
+sigCount(all.aov@dunn.test$res$P.adj)
+
 # -------~~ categories e --------
 
 # subset c 
@@ -1132,6 +1165,9 @@ pivot.sub <- pivot %>%
 
 # anova summary class
 all.aov <- one_anova(pivot.sub, 1)
+
+# count significants
+sigCount(all.aov@dunn.test$res$P.adj)
 
 # -------~~ categories previous --------
 
@@ -1752,6 +1788,11 @@ table(dfR$session, dfR$start_gr)
 # all anova two way
 two.aov <- two_anova(pivot, 1, 3)
 
+model.aov
+
+report(model.aov) %>% 
+  table_short()
+
 # # two-way anova
 # res.aov2 <- aov(total ~ session + start_gr, data = pivot)
 # summary(res.aov2)
@@ -1866,6 +1907,12 @@ all.aov <- one_anova(pivot, 1)
 # all anova
 all.aov <- one_anova(pivot, 3)
 
+
+model.aov <- two.aov@res.aov2 
+
+View(report(model.aov) %>% 
+  table_short())
+
 # -------~~ data most items --------
 
 # INTERACTIONS - ITEMS
@@ -1956,9 +2003,9 @@ inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 # dur.summ <- around_summary_ouput("both", "in", 2)
 # aft.summ <- around_summary_ouput("both", "aft", 2)
 
-# -------~~ before --------
 # -------~~ data preparation --------
 
+# load files
 load(file='fname.RData')
 bef <- bef.summ
 conc <- in.summ
@@ -1969,14 +2016,7 @@ names(bef)[1] <- "items"
 names(conc)[1] <- "items"
 names(aft)[1] <- "items"
 
-# add rank to data frames
-c.rank <-  subset.c[, c(1,9)]
-u.rank <-  subset.u[, c(1,9)]
-e.rank <-  subset.e[, c(1,9)]
-all.ranks <- rbind(c.rank, u.rank, e.rank)
-
 # add ranks to data frames
-# vlookup like function in t
 bef <- (merge(all.ranks, bef, by = 'items'))
 conc <- (merge(all.ranks, conc, by = 'items'))
 aft <- (merge(all.ranks, aft, by = 'items'))
@@ -1989,45 +2029,74 @@ bef <- (merge(items.m, bef, by = 'items'))
 conc <- (merge(items.m, conc, by = 'items'))
 aft <- (merge(items.m, aft, by = 'items'))
 
-# add categories & type
+# resave(items.m, file = "fname.RData")
 
-bef.cat <- bef
-inner_join(bef.cat, items.m, by = c('set1', 'category'))
+### prepare data frames
+prepare_df<- function(df){
+  
+  df %>% inner_join(items.m)
+  df$set1C <- items.m$category[match(df$set1, items.m$items)]
+  df$set2C <- items.m$category[match(df$set2, items.m$items)]
+  df$set3C <- items.m$category[match(df$set3, items.m$items)]
+  df$set4C <- items.m$category[match(df$set4, items.m$items)]
+  
+  df$set1t <- items.m$type[match(df$set1, items.m$items)]
+  df$set2t <- items.m$type[match(df$set2, items.m$items)]
+  df$set3t <- items.m$type[match(df$set3, items.m$items)]
+  df$set4t <- items.m$type[match(df$set4, items.m$items)]
+  
+  return(df)
+}
 
-bef.cat %>% inner_join(items.m)
-bef.cat$set1C <- items.m$category[match(bef.cat$set1, items.m$items)]
-bef.cat$set2C <- items.m$category[match(bef.cat$set2, items.m$items)]
-bef.cat$set3C <- items.m$category[match(bef.cat$set3, items.m$items)]
-bef.cat$set4C <- items.m$category[match(bef.cat$set4, items.m$items)]
+bef.cat <- prepare_df(bef)
+aft.cat <- prepare_df(aft)
+conc.cat <- prepare_df(conc)
 
-bef.cat$set1t <- items.m$type[match(bef.cat$set1, items.m$items)]
-bef.cat$set2t <- items.m$type[match(bef.cat$set2, items.m$items)]
-bef.cat$set3t <- items.m$type[match(bef.cat$set3, items.m$items)]
-bef.cat$set4t <- items.m$type[match(bef.cat$set4, items.m$items)]
+# -------~~ summary statistics bef --------
 
-# -------~~ summary statistics --------
+# subset data frame [select time]
+seq.df <- bef.cat[, c(1:4, 11:16)]
+seq.df <- conc.cat[, c(1:4, 11:16)]
+seq.df <- aft.cat[, c(1:4, 11:16)]
 
-# subset data frame
-bef.sub <- bef.cat[, c(1:4, 11:16)]
+### summary type
+pivot <- seq.df %>%
+  dplyr::group_by(type) %>%
+  dplyr::count(set1t) %>% # select the set
+  dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
 
+pivot2 <- seq.df %>%
+  dplyr::group_by(type) %>%
+  dplyr::count(set2t) %>% # select the set
+  dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
 
-# melt bef.sub
-bef.melt <- melt(bef.sub, id = c("type", "rank"))
+pivot$n2 <- pivot2$n
+pivot$prop2 <- pivot2$prop
 
-
-# summary bef.sub
-pivot <- bef.sub %>%
-  dplyr::filter(type == "c") %>%
+### summary categories  
+pivot <- seq.df %>%
+  #dplyr::filter(type == "c") %>%
   dplyr::group_by(category) %>%
-  dplyr::count(set2C) %>%
-  dplyr::mutate(prop = prop.table(n)*100)
+  dplyr::count(set1C) %>% # select the set
+  dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
+
+pivot2 <- seq.df %>%
+  #dplyr::filter(type == "c") %>%
+  dplyr::group_by(category) %>%
+  dplyr::count(set2C) %>% # select the set
+  dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
+
+pivot$typeC <- items.m$type[match(pivot$category, items.m$category)]
+pivot$type_set1 <- items.m$type[match(pivot$set1C, items.m$category)]
+pivot2$typeC <- items.m$type[match(pivot2$category, items.m$category)]
+pivot2$type_set2 <- items.m$type[match(pivot2$set2C, items.m$category)]
 
 
-# summary all items
-pivot <- bef.cat %>%
+### summary all items
+pivot <- seq.df %>%
   dplyr::filter(rank < 11) %>%
   dplyr::group_by(items, type) %>%
-  dplyr::count(set2C) %>%
+  dplyr::count(set1C) %>%
   dplyr::mutate(prop = prop.table(n)*100)
 
 
