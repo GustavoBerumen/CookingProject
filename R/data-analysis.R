@@ -1988,21 +1988,6 @@ inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 
 # ================ 5 ITEMS SEQUENCE ================
 
-# bef <- items_around_n("salt", "both", "bef")
-# dur <- items_around_n("salt", "both", "in")
-# aft <- items_around_n("salt", "both", "aft")
-
-# test <- bef$items.intv
-# 
-# pivot <- test %>%
-#   dplyr::filter(distance > -3 & distance < 0) %>%
-#   dplyr::group_by(item_n) %>%
-#   dplyr::summarise(count = n())
-# 
-# bef.summ <- around_summary_ouput("both", "bef", 2)
-# dur.summ <- around_summary_ouput("both", "in", 2)
-# aft.summ <- around_summary_ouput("both", "aft", 2)
-
 # -------~~ data preparation --------
 
 # load files
@@ -2055,9 +2040,9 @@ conc.cat <- prepare_df(conc)
 # -------~~ summary statistics bef --------
 
 # subset data frame [select time]
-seq.df <- bef.cat[, c(1:4, 11:16)]
-seq.df <- conc.cat[, c(1:4, 11:16)]
-seq.df <- aft.cat[, c(1:4, 11:16)]
+seq.df <- bef.cat[, c(1:8, 11:16)]
+seq.df <- conc.cat[, c(1:8, 11:16)]
+seq.df <- aft.cat[, c(1:8, 11:16)]
 
 ### summary type
 pivot <- seq.df %>%
@@ -2076,13 +2061,13 @@ pivot$prop2 <- pivot2$prop
 ### summary categories  
 pivot <- seq.df %>%
   #dplyr::filter(type == "c") %>%
-  dplyr::group_by(category) %>%
+  dplyr::group_by(category, type) %>%
   dplyr::count(set1C) %>% # select the set
   dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
 
 pivot2 <- seq.df %>%
   #dplyr::filter(type == "c") %>%
-  dplyr::group_by(category) %>%
+  dplyr::group_by(category, type) %>%
   dplyr::count(set2C) %>% # select the set
   dplyr::mutate(prop = round(prop.table(n)*100, digits =1))
 
@@ -2091,21 +2076,12 @@ pivot$type_set1 <- items.m$type[match(pivot$set1C, items.m$category)]
 pivot2$typeC <- items.m$type[match(pivot2$category, items.m$category)]
 pivot2$type_set2 <- items.m$type[match(pivot2$set2C, items.m$category)]
 
-
 ### summary all items
 pivot <- seq.df %>%
   dplyr::filter(rank < 11) %>%
-  dplyr::group_by(items, type) %>%
-  dplyr::count(set1C) %>%
-  dplyr::mutate(prop = prop.table(n)*100)
-
-
-# subset most commons 
-pivot <- bef %>%
-  dplyr::filter(rank < 11)
-
-pivot <- conc %>%
-  dplyr::filter(rank < 11)
+  dplyr::group_by(items, type, rank) %>%
+  dplyr::select(set1, set2, set3) %>%
+  dplyr::arrange(type, rank)
 
 
 # ================ 6 PLACES ================
@@ -2121,15 +2097,17 @@ cols.mat <- length(df.places)
 for (i in seq_along(df.places$item)){
   df.places[i, 2:cols.mat] <- round((df.places[i, 2:cols.mat]/sum(df.places[i, 2:cols.mat])*100), digits = 0)}
 
-# get types to add to list
-types <-  places.list %>%
-  dplyr::group_by(type, item) %>%
-  dplyr::distinct(type, items)
+# add type
+df.places$type <- df$type[match(df.places$item, df$items)]
 
-# add column to mat.places
-df.places <- cbind(types[1], df.places)
-# sort df. places
-df.places <- df.places[order(df.places$type, decreasing = FALSE), ]
+df.placesBU <- df.places
+
+# add rank to places
+df.places$rank <- all.ranks$rank[match(df.places$item, all.ranks$items)]
+
+# sort data frame
+df.places <- df.places %>%
+  arrange(type, rank)
 
 # -------~~ summary statistics --------
 
@@ -2146,13 +2124,14 @@ pivot %>%
 
 
 ### transform matrix into data fram
-m.places <- melt(df.places, id=(c("item", "type")))
+m.places <- melt(df.placesBU, id=(c("item", "type")))
 names(m.places)[3:4] <- c("place", "value")
+# remove rank column 
 
 # frequency by place
 pivot <- m.places %>%
   dplyr::group_by(place, type) %>%
-  dplyr::summarise(avg = mean(value))
+  dplyr::summarise(avg = round(mean(value), digits = 1))
 
 # ================ 7 FORMS ================
 # -------~~ prepare data --------
@@ -2169,6 +2148,9 @@ pivot <- forms.list %>%
   dplyr::summarise(total= n()) %>%
   dplyr::mutate(per = (round(total/sum(total)*100, 1)))
 
+# add rank
+pivot$rank <- all.ranks$rank[match(pivot$item, all.ranks$items)]
+
 
 # ================ 8 ACTIVITIES ================
 # -------~~ prepare data --------
@@ -2181,6 +2163,8 @@ pivot <- activities.list %>%
   dplyr::group_by(item, activity) %>%
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 0)))
+
+
 
 # ================ [9] SITUATIONS [PROBLEMS AND REMARKABLE] ================
 # ================ [10] PEOPLES' OBSERVATIONs ================
