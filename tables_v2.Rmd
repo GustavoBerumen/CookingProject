@@ -58,11 +58,11 @@ kable(recipes_df, "latex", alig = "l", caption = "List of recipes", booktabs = T
 ### Source of recipes
 
 ```{r,  warning=FALSE, echo=FALSE, message=FALSE}
-source_df <- recipe.list[, c(1,4:8)]
+source_df <- recipe.list[, c(1,6:8)]
 
 kable(source_df,  "latex", alig = "l", caption = "Source of new recipes", booktabs = T) %>%
   kable_styling(latex_options = c("scale_down",  "hold_position")) %>%
-   footnote(general = "p = participant, s.time = sugested cooking time in minutes, s. CPGs = suggested number of CPGs") 
+   footnote(general = "p = participant") 
 ```
 
 ### Inventory of CPGs
@@ -131,39 +131,7 @@ kable(e_df, "latex", alig = "l",  caption = "List of environment items", booktab
 ```
 
 
-### Sub-categories of items
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
-# c data frame
-c_dft <- as.data.frame(table(c.list$`sub-cat`))
-names(c_dft) <- c("item", "count")
-c_dft$percent <- round( (c_dft$count/sum(c_dft$count) * 100), digits =1)
-c_dft$type <- rep("CPGs", length(c_dft$item)) # add type colum
-
-# u data frame
-u_dft <- as.data.frame(table(u.list$`sub-cat`))
-names(u_dft) <- c("item", "count")
-u_dft$percent <- round((u_dft$count/sum(u_dft$count) * 100), digits =1)
-u_dft$type <- rep("u", length(u_dft$item)) # add type colum
-
-# e data frame
-e_dft <- as.data.frame(table(e.list$`sub-cat`))
-names(e_dft) <- c("item", "count")
-e_dft$percent <- round((e_dft$count/sum(e_dft$count) * 100), digits =1)
-e_dft$type <- rep("e", length(e_dft$item)) # add type colum
-
-#merge dataframes
-all_dft <- merge(c_dft, u_dft, all = T)
-all_dft <- merge(all_dft, e_dft, all = T)
-all_dft <- all_dft[c(4, 1, 2, 3)] # reorder columns
-names(all_dft)[c(2,3:4)] <- c("sub-cat", "frequency","percentage (%)") # rename percent
-
-kable(all_dft, "latex", alig = "l",  caption = "Type of consumer packaged goods", booktabs = T) %>%
-  column_spec(1, bold=T) %>%
-  kable_styling(latex_options = c("hold_position")) %>%
-  collapse_rows(columns = 1:2, latex_hline = "major", valign = "top")  %>%
-   footnote(general = "percentage relative to the item's sub-category type")
-```
 
 ### Duration of cooking sessions
 

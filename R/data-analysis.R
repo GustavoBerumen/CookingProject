@@ -15,9 +15,10 @@ library(data.table)
 
 ### functions
 
-# find greater smaller than 0.05
+# find smaller than 0.05
 sigCount <- function(sigVec){
-  vc.true <- length(sigVec[sigVec == TRUE])
+  vc.comp <- sigVec < 0.05
+  vc.true <- length(vc.comp[vc.comp == TRUE])
   vc.len <- length(sigVec)
   
   return(c("vc.true: ", vc.true, "vc.len:", vc.len))
@@ -125,7 +126,7 @@ one_anova <- function(pivot, f1){
   # visualize data [version a]
   desc.pl <-
     ggboxplot(pivot, x = names(pivot[f1]), y = "total", color = names(pivot[f1]),  add = "jitter") +
-    stat_compare_means()
+    stat_compare_means(method = "anova", label = "p.format")
 
   # one way anova test
   res.aov <- aov(total ~ factor1, data = pivot)
@@ -155,7 +156,7 @@ one_anova <- function(pivot, f1){
   qq.pl <- ggqqplot(pivot$total)
 
   # [1] homogeneity of variances
-  plot(res.aov, 1)
+  try(plot(res.aov, 1))
   homog.pl <- recordPlot()
 
   # [2] levene's test
@@ -244,8 +245,9 @@ two_anova <- function(pivot, f1, f2){
   # visualize data
   desc.pl <-
     ggboxplot(pivot, x = names(pivot[f1]), y = "total", color = names(pivot[f2]),  add = "jitter") +
-    stat_compare_means()
-
+    stat_compare_means(method = "anova", label = "p.format") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
   # two-way anova test
   res.aov2 <- aov(total ~ factor1 + factor2, data = pivot)
   aov2.summ <-
@@ -382,29 +384,6 @@ pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
 # anova function summary 
 all.aov <- one_anova(pivot, 3)
-
-
-# check normatlity for anova
-# a. Homogeneity of variances
-plot(aov.df, 1)
-
-# b. Levene test (if p less than 0.5 ---> violation of assumption)
-leveneTest(total~type, data = pivot)
-
-# c. check for distributions
-ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
-
-# anova assumptions are not meet
-kruskal.test(total ~ type, data = pivot)
-
-# find wich pairs are different
-pairwise.wilcox.test(pivot$total, pivot$type,
-                     p.adjust.method = "BH")
-# global test
-compare_means(total ~ type,  data = pivot)
-
-# if significant do a dunn's test
-dunnTest(total~type, data = pivot)
 
 # set comparisons
 my_comparisons <-  list(c("c", "u"),  c("c", "e"), c("u", "e"))
@@ -639,14 +618,16 @@ e.ranks <- subset.e[, c(1, 9)]
 all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
 
 # create data frame
-cols.names <- c("item", "type", "mean", "min", "max", "mean", "total") # names of columns
+cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
 inter.df <- data.frame()
 for (col in cols.names){inter.df[[col]] <- as.numeric()}
 inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
 
-inter.df[1:10, 1:6] <- subset.c[1:10, c(1, 2, 4, 6, 7, 8)]
-inter.df[11:20, 1:6] <- subset.u[1:10, c(1, 2, 4, 6, 7, 8)]
-inter.df[21:30, 1:6] <- subset.e[1:10, c(1, 2, 4, 6, 7, 8)]
+cols.df <- c(1, 2, 4:9)
+
+inter.df[1:10, 1:8] <- subset.c[1:10, cols.df]
+inter.df[11:20, 1:8] <- subset.u[1:10, cols.df]
+inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
 
 
 # ================ 2 DURATION ================
@@ -654,7 +635,9 @@ inter.df[21:30, 1:6] <- subset.e[1:10, c(1, 2, 4, 6, 7, 8)]
 # prepare data frame
 pivot <- df %>%
   dplyr::group_by(session, participant) %>%
-  dplyr::summarise(total = sum(duration))
+  dplyr::summarise(total = sum(duration)) 
+  # %>% dplyr::group_by(session) 
+  # %>% dplyr::summarise(mean = mean(total), sd = sd(total))
 
 # check for normality (p should be greater than 0.05)
 shapiro.test(pivot$total)
@@ -664,13 +647,13 @@ ggqqplot(pivot$total)
 
 # normality was not met -> prepare data frame summary
 dplyr::group_by(pivot, session) %>%
-  dplyr::summarise(count = n(),
-                   median = median(total, na.rm = TRUE),
-                   IQR = IQR(total, na.rm = TRUE))
+  dplyr::summarise(count = n(), median = median(total, na.rm = TRUE), IQR = IQR(total, na.rm = TRUE))
 
 # visualize groups
 ggboxplot(pivot, x = "session", y = "total")
 
+
+# test normality not met 
 wilcox.test(pivot$total[pivot$session=="reg"], pivot$total[pivot$session=="new"], paired=T)
 
 # wilconson (normality is not meet)
@@ -678,6 +661,15 @@ wilcoxsign_test(pivot$total[pivot$session=="reg"] ~ pivot$total[pivot$session=="
 
 # calculate effect size (absolute Z/sqrt(len of both groups))
 1.60/sqrt(40)
+
+
+# plot 
+library(ggplot2) #Main package for graph
+library(ggthemes)
+ggplot(pivot, aes(factor(participant), total, fill = session)) + 
+  geom_bar(stat="identity", position = "dodge") + 
+  ggtitle("Total duration of interactions per session") +
+  xlab("Participants") + ylab("Total duration of interactions (seconds)")
 
 # -------~~ type --------
 pivot <- df %>%
@@ -688,6 +680,11 @@ pivot <- df %>%
 # re-order type
 pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
+# all.aov summary
+all.aov <- one_anova(pivot, 1)
+
+
+# --- previous analysis
 
 # anova
 aov.df <- aov(duration ~ type, data = pivot)
@@ -732,18 +729,24 @@ pivot %>% dplyr::group_by(type) %>%
 
 # -------~~ categories --------
 # -------~~ categories c --------
+# # prepare data
+# pivot <- df %>%
+#   dplyr::select(items, items_uniq, type, category, p_corrected, duration)
+# # rename duration to total
+# names(pivot)[5] <- "total"
+
+
 # prepare data
 pivot <- df %>%
-  dplyr::select(items, items_uniq, type, category, p_corrected, duration)
-# rename duration to total
-names(pivot)[5] <- "total"
+  dplyr::group_by(type, category, p_corrected) %>%
+  dplyr::summarise(total = sum(duration))
 
 # subset c 
 pivot.sub <- pivot %>%
   filter(type == "c")
 
 # anova summary class
-all.aov <- one_anova(pivot.sub, 4)
+all.aov <- one_anova(pivot.sub, 2)
 
 # -------~~ categories u --------
 # subset c 
@@ -751,7 +754,7 @@ pivot.sub <- pivot %>%
   filter(type == "u")
 
 # anova summary class
-all.aov <- one_anova(pivot.sub, 4)
+all.aov <- one_anova(pivot.sub, 2)
 
 # -------~~ categories e --------
 # subset c 
@@ -759,7 +762,7 @@ pivot.sub <- pivot %>%
   filter(type == "e")
 
 # anova summary class
-all.aov <- one_anova(pivot.sub, 4)
+all.aov <- one_anova(pivot.sub, 2)
 
 # -------~~ categories previous --------
 
@@ -909,42 +912,43 @@ pivot %>% dplyr::group_by(category) %>%
 # prepare data
 pivot <- df %>%
   dplyr::group_by(items, type) %>%
-  dplyr::summarise(total = sum(duration), n = length(items), mean = mean(duration), sd = sd(duration),min = min(duration), max = max(duration)) %>%
+  dplyr::summarise(total = sum(duration), n = length(items), mean = round(mean(duration), digits = 1), sd = round(sd(duration), digits =1), min = min(duration), max = max(duration)) %>%
   dplyr::arrange(desc(total))
+pivot$ranks <- all.ranks$rank[match(pivot$items, all.ranks$items)]
 
 # filter items 
 subset.c <- pivot %>%
   dplyr::filter(type == "c") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # filter items 
 subset.u <- pivot %>%
   dplyr::filter(type == "u") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # filter items 
 subset.e <- pivot %>%
   dplyr::filter(type == "e") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # create data frame
-cols.names <- c("item", "type", "mean", "min", "max", "total") # names of columns
+cols.names <- c("item", "type", "mean", "sd", "min", "max", "total") # names of columns
 inter.df <- data.frame()
 for (col in cols.names){inter.df[[col]] <- as.numeric()}
 inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
 
 # set cols data frame
-cols.df <- c(1,2,5,7:8,3)
+cols.df <- c(1,2,5:8,3)
 
-inter.df[1:10, c(1:6)] <- subset.c[1:10, cols.df]
-inter.df[11:20, c(1:6)] <- subset.u[1:10, cols.df]
-inter.df[21:30, c(1:6)] <- subset.e[1:10, cols.df]
+inter.df[1:10, c(1:7)] <- subset.c[1:10, cols.df]
+inter.df[11:20, c(1:7)] <- subset.u[1:10, cols.df]
+inter.df[21:30, c(1:7)] <- subset.e[1:10, cols.df]
 
 cat("------------------ ", "data frame most items")
 
 pivot <- df %>%
   dplyr::group_by(items, type) %>%
-  dplyr::summarise(total = sum(duration), n = length(items)) %>%
+  dplyr::summarise(total = sum(duration), n = length(items), mean = mean(duration), sd = sd(duration)) %>%
   dplyr::arrange(desc(total))
 
 subset.c <- pivot %>%
@@ -959,16 +963,20 @@ subset.e <- pivot %>%
   dplyr::filter(type == "e") %>%
   dplyr::arrange(desc(total))
 
-# create data frame
-cols.names <- c("c", "ctotal", "u", "utotal", "e", "etotal", "item") # names of columns
-dur.df <- data.frame()
-for (col in cols.names){dur.df[[col]] <- as.numeric()}
-dur.df[nrow(dur.df)+ 10,] <- NA #add empty NAs
 
-dur.df[, 1:2] <- c(subset.c$items[1:10], subset.c$total[1:10])
-dur.df[, 3:4] <- c(subset.u$items[1:10], subset.u$total[1:10])
-dur.df[, 5:6] <- c(subset.e$items[1:10], subset.e$total[1:10])
-dur.df$item <- c(1:10)
+# create data frame
+cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
+inter.df <- data.frame()
+for (col in cols.names){inter.df[[col]] <- as.numeric()}
+inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
+
+cols.df <- c(1, 2, 4:9)
+
+inter.df[1:10, 1:8] <- subset.c[1:10, cols.df]
+inter.df[11:20, 1:8] <- subset.u[1:10, cols.df]
+inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
+
+
 
 # re-order columns
 dur.df <- dur.df %>%
@@ -980,7 +988,6 @@ pivot <- df %>%
   dplyr::summarise(min = min(duration), max = max(duration), total = sum(duration), n = length(items), avg = total/n) 
 
 # ================ 3 LISTING: GROUPING and UNIQUE ================
-
 # -------~~ all --------
 
 ### grouping
@@ -1039,10 +1046,18 @@ pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
   geom_jitter(color="black", size=0.4, alpha=0.9) +
   ggtitle("Total Items by Sessions")
 
+# plot 
+ggplot(pivot, aes(factor(participant), total, fill = session)) + 
+  geom_bar(stat="identity", position = "dodge") + 
+  ggtitle("Total number of items involved per session") +
+  xlab("Participants") + ylab("Total number of items involved per session")
+
 t.summary <- pivot %>%                          # Specify data frame
   group_by(session) %>%                         # Specify group indicator
   summarise_at(vars(total),                     # Specify column
   list(mean = mean, sd = sd))                   # Specify function
+
+
 
 
 # -------~~ type --------
@@ -1067,8 +1082,11 @@ pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
 all.aov<- one_anova(pivot, 1)
 
+
+
+
 # # anova
-aov.df <- aov(total ~ type, data = pivot)
+# aov.df <- aov(total ~ type, data = pivot)
 # 
 # # summary of the analysis
 # summary(aov.df)
@@ -1081,7 +1099,7 @@ aov.df <- aov(total ~ type, data = pivot)
 # leveneTest(total~type, data = pivot)
 # 
 # # c. check for distributions
-ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
+# ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
 # 
 # # anova assumptions are not meet
 # kruskal.test(total ~ type, data = pivot)
@@ -1319,7 +1337,9 @@ pivot <- df %>%
   dplyr::group_by(items, session, p_corrected, type) %>%
   dplyr::distinct(items) %>%
   dplyr::group_by(items, type) %>%
-  dplyr::summarise(total = length(items))
+  dplyr::summarise(total = length(items), per = round(total/40*100, digits =1))
+# add rank 
+pivot$ranks <- all.ranks$rank[match(pivot$items, all.ranks$items)]
 
 ### unique
 pivot <- df %>%
@@ -1339,29 +1359,30 @@ pivot <- df %>%
 # filter items 
 subset.c <- pivot %>%
   dplyr::filter(type == "c") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # filter items 
 subset.u <- pivot %>%
   dplyr::filter(type == "u") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # filter items 
 subset.e <- pivot %>%
   dplyr::filter(type == "e") %>%
-  dplyr::arrange(desc(total))
+  dplyr::arrange(ranks)
 
 # create data frame
-cols.names <- c("item", "type", "sessions", "mean", "min", "max", "total") # names of columnsinter.df <- data.frame()
+inter.df <- data.fram
+cols.names <- c("item", "type", "sessions", "percentage") # names of columnsinter.df <- data.frame()
 for (col in cols.names){inter.df[[col]] <- as.numeric()}
 inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
 
 # set cols data frame
-cols.df <- c(1,2,4, 5:7, 3)
+cols.df <- c(1:4)
 
-inter.df[1:10, c(1:7)] <- subset.c[1:10, cols.df]
-inter.df[11:20, c(1:7)] <- subset.u[1:10, cols.df]
-inter.df[21:30, c(1:7)] <- subset.e[1:10, cols.df]
+inter.df[1:10, c(1:4)] <- subset.c[1:10, cols.df]
+inter.df[11:20, c(1:4)] <- subset.u[1:10, cols.df]
+inter.df[21:30, c(1:4)] <- subset.e[1:10, cols.df]
 
 
 cat("------------------ ", "data frame most items")
@@ -1730,11 +1751,14 @@ dfR <- df
 dfR$start_rel <- rel_positions(df)
 dfR$start_gr <- as.factor(ceiling(dfR$start_rel/33.34))
 
+
 # -------~~ all --------
 
 pivot <- dfR %>%
   dplyr::group_by(session, participant, start_gr) %>%
-  dplyr::summarise(total = length(start_gr))
+  dplyr::summarise(total = length(start_gr)) 
+names(pivot)[3] <- "sections"
+  
 
 # sort data frame
 pivot[order(pivot$session, decreasing = TRUE), ]
@@ -1742,35 +1766,6 @@ pivot[order(pivot$session, decreasing = TRUE), ]
 # all anova
 all.aov <- one_anova(pivot, 3)
 
-# # anova
-# aov.df <- aov(total ~ start_gr, data = pivot)
-# 
-# # summary of the analysis
-# summary(aov.df)
-# 
-# # check normatlity for anova
-# # a. Homogeneity of variances
-# plot(aov.df, 1)
-# 
-# # b. Levene test (if p less than 0.5 ---> violation of assumption)
-# leveneTest(total~start_gr, data = pivot)
-# 
-# # c. check for distributions
-# ggplot(pivot, aes(x=total, fill=start_gr)) + geom_density(alpha=.3)
-# 
-# # anova assumptions are meet
-# compare_means(total ~ start_gr, data = pivot, method = "anova")
-# 
-# # plot
-# ggboxplot(pivot, x = "start_gr", y = "total",
-#           color = "start_gr", add = "jitter") +
-#   stat_compare_means() +                     # Add global p-value
-#   ggtitle("start_gr")
-# 
-# # mean and sd
-# pivot %>% dplyr::group_by(start_gr) %>%
-#   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
-# cat("no significant differences")
 
 # -------~~ sessions --------
 
@@ -1778,6 +1773,8 @@ all.aov <- one_anova(pivot, 3)
 pivot <- dfR %>%
   dplyr::group_by(session, participant, start_gr) %>%
   dplyr::summarise(total = length(start_gr))
+names(pivot)[3] <- "sections"
+
 
 # sort data frame
 pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
@@ -1788,10 +1785,6 @@ table(dfR$session, dfR$start_gr)
 # all anova two way
 two.aov <- two_anova(pivot, 1, 3)
 
-model.aov
-
-report(model.aov) %>% 
-  table_short()
 
 # # two-way anova
 # res.aov2 <- aov(total ~ session + start_gr, data = pivot)
@@ -1842,6 +1835,8 @@ report(model.aov) %>%
 pivot <- dfR %>%
   dplyr::group_by(type, p_corrected, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
+names(pivot)[3] <- "sections"
+
 
 # GROUPING
 pivot <- dfR %>%
@@ -1873,7 +1868,7 @@ all.aov <- one_anova(pivot, 3)
 # -------~~ categories --------
 # INTERACTIONS
 pivot <- dfR %>%
-  dplyr::filter(type =="c") %>% # comment for two way anova
+  dplyr::filter(type =="u") %>% # comment for two way anova
   dplyr::group_by(category, p_corrected, start_gr) %>%  # remove type for two way anova
   dplyr::summarise(total = length(start_gr))
 
@@ -1898,20 +1893,11 @@ pivot <- dfR %>%
   dplyr::summarise(total = length(start_gr))
 
 # -------~~ categories anovas --------
+names(pivot)[3] <- "sections"
 
 # all anova two way
 two.aov <- two_anova(pivot, 1, 3)
 
-# all anova
-all.aov <- one_anova(pivot, 1)
-# all anova
-all.aov <- one_anova(pivot, 3)
-
-
-model.aov <- two.aov@res.aov2 
-
-View(report(model.aov) %>% 
-  table_short())
 
 # -------~~ data most items --------
 
