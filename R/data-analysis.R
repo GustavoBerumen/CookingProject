@@ -321,14 +321,18 @@ two_anova <- function(pivot, f1, f2){
 
 # data frame
 df <- reg.new.con.cat
+# load files
+load(file='fname.RData')
 
 # ================ 1 INTERACTIONS ================
 # -------~~ sessions --------
 
 # prepare data frame
 pivot <- df %>%
-  dplyr::select(items, session, p_corrected) %>%
-  dplyr::group_by(session, p_corrected) %>%
+  # dplyr::select(items, session, p_corrected) %>%
+  dplyr::select(items, session, participant) %>%
+  #dplyr::group_by(session, p_corrected) %>%
+  dplyr::group_by(session, participant) %>%
   dplyr::summarise(total = length(items))
 
 # order data frame
@@ -357,24 +361,27 @@ t.test(pivotReg$total, pivotNew$total, paired = TRUE, alternative = "two.sided")
 pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
   geom_boxplot() +
   geom_jitter(color="black", size=0.4, alpha=0.9) +
-  ggtitle("Total Interactions by Sessions")
+  ggtitle("Total Interactions by Sessions") 
 
 
-# # normality was not met -> prepare data frame summary
-# dplyr::group_by(pivot, session) %>%
-#   dplyr::summarise(count = n(),
-#                    median = median(total, na.rm = TRUE),
-#                    IQR = IQR(total, na.rm = TRUE))
+# plot 
+library(ggplot2) #Main package for graph
+library(ggthemes)
+ggplot(pivot, aes(factor(participant), total,  fill = factor(session, levels=c("reg", "new")))) + 
+  geom_bar(stat="identity", position = "dodge") + 
+  ggtitle("Total number of interactions per session") +
+  xlab("Participants") + ylab("Interactions per session") + labs(fill = "Sessions")
 
-# # wilconson (normality is not meet)
-# wilcox.test(pivot$total[pivot$session=="reg"], pivot$total[pivot$session=="new"], paired=T)
-# 
-# wilcoxsign_test(pivot$total[pivot$session=="reg"] ~ pivot$total[pivot$session=="new"])
 
-# calculate effect size (absolute Z/sqrt(len of both groups))
-# 61.5/sqrt(40)
 
 # -------~~ type --------
+# df to plot 
+pivot <- df %>%
+  dplyr::group_by(session, participant, type) %>%
+  dplyr::summarise(total = length(items)) %>%
+  dplyr::mutate(per = (round(total/sum(total)*100, 0)))
+
+# previous df 
 pivot <- df %>%
   dplyr::group_by(session, participant, type) %>%
   dplyr::summarise(total = length(items), percent = (length(items)/ length(df$items))*100)
@@ -397,6 +404,32 @@ ggboxplot(pivot, x = "type", y = "total",
 # mean and sd
 pivot %>% dplyr::group_by(type) %>%
   dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "new")
+
+# plot proportions
+
+library(ggplot2) #Main package for graph
+library(ggthemes)
+pivotF <- pivot %>%
+  dplyr::filter(session == "new")
+
+
+
+n <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) + 
+  geom_bar(stat="identity", position = "fill") +
+  ggtitle("Proportion of interaction by type of item") +
+  xlab("Participants") + ylab("Proportion of Interactions") + labs(fill = "Type", subtitle = "new sessions")
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "reg")
+
+r <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) + 
+  geom_bar(stat="identity", position = "fill") +
+  ggtitle("Proportion of interaction by type of item") +
+  xlab("Participants") + ylab("Proportion of Interactions") + labs(fill = "Type", subtitle = "regular sessions")
+
 
 
 # -------~~ categories --------
@@ -591,6 +624,11 @@ names(items.list.m)[1] <- "items"
 # vlookup like function in t
 pivot_items <- (merge(items.list.m, pivot_items, by = 'items'))
 
+# sort pivot items
+pivot_items <- pivot_items %>%
+  dplyr::arrange(desc(total))
+  
+
 # filter items 
 subset.c <- pivot_items  %>%
   dplyr::filter(type == "c") %>%
@@ -616,6 +654,8 @@ subset.e$rank <- c(1:length(subset.e$items))
 e.ranks <- subset.e[, c(1, 9)]
 
 all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
+
+resave(all.ranks, file = "fname.RData")
 
 # create data frame
 cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
@@ -1973,7 +2013,6 @@ inter.df3 <- inter.df %>%
 inter.all <-  cbind(inter.df1[c(1, 3:5)], inter.df2[3:5], inter.df3[3:5])
 
 # ================ 5 ITEMS SEQUENCE ================
-
 # -------~~ data preparation --------
 
 # load files
@@ -2026,8 +2065,8 @@ conc.cat <- prepare_df(conc)
 # -------~~ summary statistics bef --------
 
 # subset data frame [select time]
-seq.df <- bef.cat[, c(1:8, 11:16)]
-seq.df <- conc.cat[, c(1:8, 11:16)]
+seq.df <- seq.df <- conc.cat[, c(1:8, 11:16)]
+bef.cat[, c(1:8, 11:16)]
 seq.df <- aft.cat[, c(1:8, 11:16)]
 
 ### summary type
@@ -2062,6 +2101,8 @@ pivot$type_set1 <- items.m$type[match(pivot$set1C, items.m$category)]
 pivot2$typeC <- items.m$type[match(pivot2$category, items.m$category)]
 pivot2$type_set2 <- items.m$type[match(pivot2$set2C, items.m$category)]
 
+
+
 ### summary all items
 pivot <- seq.df %>%
   dplyr::filter(rank < 11) %>%
@@ -2085,7 +2126,7 @@ for (i in seq_along(df.places$item)){
 
 # add type
 df.places$type <- df$type[match(df.places$item, df$items)]
-
+# df.places back up
 df.placesBU <- df.places
 
 # add rank to places
@@ -2116,17 +2157,27 @@ names(m.places)[3:4] <- c("place", "value")
 
 # frequency by place
 pivot <- m.places %>%
-  dplyr::group_by(place, type) %>%
+  dplyr::group_by(type, place) %>%
   dplyr::summarise(avg = round(mean(value), digits = 1))
 
 # ================ 7 FORMS ================
 # -------~~ prepare data --------
 
-# prepare data frame
+# prepare data frame / get number of forms per category 
 pivot <- forms.list %>%
   dplyr::distinct(type, item, form) %>%
   dplyr::group_by(item, type) %>%
-  dplyr::summarise(total = n())
+  dplyr::summarise(total = n()) %>%
+  dplyr::group_by(type) %>%
+  dplyr::summarise(mean = mean(total), sd = sd(total), min = min(total), max = max(total))
+
+# add rank
+pivot$rank <- all.ranks$rank[match(pivot$item, all.ranks$items)]
+
+pivot <- pivot %>%
+  dplyr::filter(rank < 11, type == "u") 
+mean(pivot$total)
+sd(pivot$total)
 
 # add percentages to data frame
 pivot <- forms.list %>%
@@ -2137,10 +2188,46 @@ pivot <- forms.list %>%
 # add rank
 pivot$rank <- all.ranks$rank[match(pivot$item, all.ranks$items)]
 
+pivot <- pivot %>%
+  dplyr::filter(type == "u") %>%
+  dplyr::arrange(type, item, per, rank)
+
+# filter items with a prominent variety (> 40%)
+pivotF <- pivot %>%
+  dplyr::filter(per >95)
+
+length(unique(pivotF$item))
+
 
 # ================ 8 ACTIVITIES ================
 # -------~~ prepare data --------
 
+load(all.ranks)
+
+# create df for places
+df.activities <- as.data.frame(table(activities.list$item, activities.list$activity))
+names(df.places)[1:3] <- c("item", "activity", "count")
+df.activities <- dcast(activities.list, item~activity)
+
+# get percentages
+cols.mat <- length(df.activities)
+for (i in seq_along(df.activities$item)){
+  df.activities[i, 2:cols.mat] <- round((df.activities[i, 2:cols.mat]/sum(df.activities[i, 2:cols.mat])*100), digits = 0)}
+
+# add type
+df.activities$type <- df$type[match(df.activities$item, df$items)]
+# df.places back up
+df.activitiessBU <- df.activities
+
+# add rank to places
+df.activities$rank <- all.ranks$rank[match(df.activities$item, all.ranks$items)]
+
+# sort data frame
+df.activities <- df.activities %>%
+  arrange(type, rank)
+
+
+# summary df
 pivot <- activities.list %>%
   dplyr::group_by(type, item, activity) %>%
   dplyr::summarise(total= n())
@@ -2149,8 +2236,6 @@ pivot <- activities.list %>%
   dplyr::group_by(item, activity) %>%
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 0)))
-
-
 
 # ================ [9] SITUATIONS [PROBLEMS AND REMARKABLE] ================
 # ================ [10] PEOPLES' OBSERVATIONs ================
@@ -2168,8 +2253,8 @@ pivot <- df %>%
 pivot <- df %>%
   dplyr::distinct(item.number, p_corrected)
 
-pivot <- df %>%
-  dplyr::distinct(category, type, p_corrected)
+# pivot <- df %>%
+#   dplyr::distinct(category, type, p_corrected)
 
 
 #create data frame to add data
@@ -2207,7 +2292,7 @@ edgelist$equal <- edgelist$from-edgelist$to
 
 
 # resave(edgelist, file = "fname.RData")
-# load("fname.RData")
+#load("fname.RData")
 
 # -------~~ summary statistics Items --------
 
@@ -2222,16 +2307,18 @@ edge.df2 <- edgelist %>%
 
 # working pivot 
 pivot <- edge.df2 %>%
-  dplyr::group_by(fromC, toC) %>%
+  dplyr::group_by(fromI, toI) %>%
   dplyr::summarise(count = n()) %>% 
-  dplyr::filter(fromC %in% c("spice")) %>% 
+  #dplyr::filter(fromC %in% c("spice")) %>% 
+  dplyr::filter(fromI %in% c("salt")) %>% 
   dplyr::mutate(rank = dense_rank(desc(count))) %>%  
   dplyr::filter(rank < 6)
 
 # prepare for visualisation
 pivot$count <- pivot$count/100
 # capitalize from. This is necessary for the sankey diagram
-pivot$fromC <- capitalize(pivot$fromC)
+library(Hmisc)
+pivot$fromC <- capitalize(pivot$fromI)
 
 
 
@@ -2270,6 +2357,8 @@ library(tidyverse)
 ###
 names(pivot)[1:3] <- c("source", "target", "value")
 data_long <- pivot
+data_long$value <- data_long$value^10
+
 
 # From these flows we need to create a node data frame: it lists every entities involved in the flow
 nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
@@ -2280,14 +2369,41 @@ data_long$IDtarget=match(data_long$target, nodes$name)-1
 
 # prepare colour scale
 ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+my_color <- 'd3.scaleOrdinal() .domain(["a", "b"]) .range(["#69b3a2", "steelblue"])'
+my_color <- 'd3.scaleOrdinal() .domain(["type_a", "type_b", "my_unique_group"]) .range(["#69b3a2", "steelblue", "grey"])'
+
+my_color <- JS("d3.scaleOrdinal(d3.schemeCategory20);")
 
 # Make the Network
 sankeyNetwork(Links = data_long, Nodes = nodes,
               Source = "IDsource", Target = "IDtarget",
               Value = "value", NodeID = "name", 
-              sinksRight=FALSE, colourScale=ColourScal, nodeWidth=20, fontSize=13, nodePadding=10)
+              sinksRight=FALSE, colourScale=my_color, nodeWidth=20, fontSize=14, nodePadding=10)
 
+# Check the current search path for fonts
+font_paths()    
+#> [1] "C:\\Windows\\Fonts"
 
+# List available font files in the search path
+font_files()    
+#>   [1] "AcadEref.ttf"                                
+#>   [2] "AGENCYB.TTF"                           
+#> [428] "pala.ttf"                                    
+#> [429] "palab.ttf"                                   
+#> [430] "palabi.ttf"                                  
+#> [431] "palai.ttf"
+
+# syntax: font_add(family = "<family_name>", regular = "/path/to/font/file")
+font_add("Palatino", "pala.ttf")
+
+font_families()
+#> [1] "sans"         "serif"        "mono"         "wqy-microhei"
+#> [5] "Montserrat"   "Roboto"       "Palatino"
+
+## automatically use showtext for new devices
+showtext_auto() 
+myFont1 <- "Montserrat"
+myFont2 <- "Roboto"
 
 
 
@@ -2410,9 +2526,21 @@ sankeyNetwork(Links = data_long, Nodes = nodes,
               sinksRight=FALSE, colourScale=ColourScal, nodeWidth=20, fontSize=13, nodePadding=10)
 
 
+# ================ OTHERS ================
 
+# number of items in a category 
 
+pivot <- items.list %>%
+  dplyr::filter(type == "e") %>%
+  dplyr::group_by(category) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(per = (round(n/sum(n)*100, 0)))  %>%
+  dplyr::arrange(-n)  
 
+cb <- function(df, sep="\t", dec=",", max.size=(200*1000)){
+  # Copy a data.frame to clipboard
+  write.table(df, paste0("clipboard-", formatC(max.size, format="f", digits=0)), sep=sep, row.names=FALSE, dec=dec)
+}
 
 
 
