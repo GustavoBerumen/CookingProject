@@ -11,6 +11,7 @@ library(coin)
 library(rcompanion)
 library(report)
 library(data.table)
+library(cowplot)
 
 
 ### functions
@@ -332,22 +333,21 @@ pivot <- df %>%
   # dplyr::select(items, session, p_corrected) %>%
   dplyr::select(items, session, participant) %>%
   #dplyr::group_by(session, p_corrected) %>%
+  dplyr::filter(participant < 20) %>% # filter participant
   dplyr::group_by(session, participant) %>%
   dplyr::summarise(total = length(items))
-
 # order data frame
 pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
 data_summary(pivot$total)
-
 # filter reg
 pivotReg <- pivot %>%
   filter(session == "reg")
 data_summary(pivotReg$total)
-
 # filter new
 pivotNew <- pivot %>%
   filter(session == "new")
 data_summary(pivotNew$total)
+
 
 # check for normality
 shapiro.test(pivot$total)
@@ -363,27 +363,67 @@ pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
   geom_jitter(color="black", size=0.4, alpha=0.9) +
   ggtitle("Total Interactions by Sessions") 
 
-
 # plot 
-library(ggplot2) #Main package for graph
-library(ggthemes)
 ggplot(pivot, aes(factor(participant), total,  fill = factor(session, levels=c("reg", "new")))) + 
   geom_bar(stat="identity", position = "dodge") + 
   ggtitle("Total number of interactions per session") +
   xlab("Participants") + ylab("Interactions per session") + labs(fill = "Sessions")
 
+### correlation
+cor(pivotReg$total, pivotNew$total,  method = "pearson", use = "complete.obs")
+#
+res <- cor.test(pivotReg$total, pivotNew$total, method = "pearson")
+
+# data to plot
+pivotPlot <- pivotReg[, 2:3]
+names(pivotPlot)[2] <- "reg"
+pivotPlot$new <- pivotNew$total
+
+# order data
+pivotPlot <- pivotPlot[ order(pivotPlot[,2] ), ]
+
+# plot correlation between two variables
+ggscatter(pivotPlot, x = "reg", y = "new", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "interactions regular sessions", ylab = "interactions new sessions") +
+          ggtitle("Interactions in Regular Meal vs Interactions in New Meal")
+
+# plot t test 
+library(ggplot2)
+library(ggsignif)
+ggboxplot(pivot, x = "session", y = "total", fill = "session", add = "jitter", xlab = "sessions", ylab = "number of interactions")  +
+  stat_compare_means(method = "t.test", label = "p.format", paired = TRUE) +
+        ggtitle("Mean of interactions by session") +
+        labs(subtitle = "regular and new sessions")
+
+# plot anova 
+ggboxplot(pivot, x = "type", y = "total", fill = "type", add = "jitter") +
+  stat_compare_means(method = "anova", label = "p.format")
+
+
+
+### plot interactions by type 
+ggplot(pivot, aes(x = session, y = total, fill = session)) + 
+  geom_bar(stat="identity", position = "dodge") +
+  ggtitle("Mean of interaction by type of item") +
+  xlab("Participants") + ylab("Proportion of Interactions") + labs(fill = "Type", subtitle = "regular and new sessions")
 
 
 # -------~~ type --------
 # df to plot 
 pivot <- df %>%
-  dplyr::group_by(session, participant, type) %>%
+  # dplyr::group_by(session, participant, type) %>%
+  dplyr::group_by(type, p_corrected, session) %>%
   dplyr::summarise(total = length(items)) %>%
-  dplyr::mutate(per = (round(total/sum(total)*100, 0)))
-
-# previous df 
+  # dplyr::mutate(per = (round(total/sum(total)*100, 0)))
+  dplyr::group_by(type, session) %>%
+  dplyr::summarise(total = mean(total))
+  
+# previous df (to do anova)
 pivot <- df %>%
   dplyr::group_by(session, participant, type) %>%
+  #dplyr::filter(type == "c") %>%
   dplyr::summarise(total = length(items), percent = (length(items)/ length(df$items))*100)
 
 # re-order type
@@ -391,6 +431,11 @@ pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
 # anova function summary 
 all.aov <- one_anova(pivot, 3)
+
+two.aov <- two_anova(pivot, 1, 3)
+
+# t test
+t.test(total ~ session, pivot, paired=TRUE)
 
 # set comparisons
 my_comparisons <-  list(c("c", "u"),  c("c", "e"), c("u", "e"))
@@ -408,13 +453,15 @@ pivot %>% dplyr::group_by(type) %>%
 pivotF <- pivot %>%
   dplyr::filter(session == "new")
 
-# plot proportions
+# plot types per session 
+pivotP <- pivot %>%
+  dplyr::group_by(session, type) %>%
+  dplyr::summarise(tot <- sum(total), mean <- tot/20)
 
-library(ggplot2) #Main package for graph
-library(ggthemes)
+
+# plot proportions
 pivotF <- pivot %>%
   dplyr::filter(session == "new")
-
 
 
 n <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) + 
@@ -429,6 +476,22 @@ r <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +
   geom_bar(stat="identity", position = "fill") +
   ggtitle("Proportion of interaction by type of item") +
   xlab("Participants") + ylab("Proportion of Interactions") + labs(fill = "Type", subtitle = "regular sessions")
+
+
+### plot interactions by type 
+ggplot(pivot, aes(x = session, y = total, fill = type)) + 
+  geom_bar(stat="identity", position = "dodge") +
+  ggtitle("Mean of interaction by type of item") +
+  xlab("Session") + ylab("Number of interactions") + labs(fill = "Type", subtitle = "regular and new sessions")
+
+# plot anova 
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
+
+ggboxplot(pivot, x = "type", y = "total", fill = "session", add = "jitter") +
+  # scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Mean of interaction by type of item and session") +
+  xlab("Type") + ylab("Number of interactions") + labs(fill = "Session", subtitle = "regular and new sessions")
+
 
 
 
@@ -675,9 +738,22 @@ inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
 # prepare data frame
 pivot <- df %>%
   dplyr::group_by(session, participant) %>%
-  dplyr::summarise(total = sum(duration)) 
-  # %>% dplyr::group_by(session) 
-  # %>% dplyr::summarise(mean = mean(total), sd = sd(total))
+  dplyr::summarise(total = sum(duration)) #%>%
+  # dplyr::filter(participant < 20)  # filter participant
+  
+# order data frame
+pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
+data_summary(pivot$total)
+
+# filter reg
+pivotReg <- pivot %>%
+  filter(session == "reg")
+data_summary(pivotReg$total)
+
+# filter new
+pivotNew <- pivot %>%
+  filter(session == "new")
+data_summary(pivotNew$total)
 
 # check for normality (p should be greater than 0.05)
 shapiro.test(pivot$total)
@@ -685,13 +761,15 @@ shapiro.test(pivot$total)
 # visual inspection normality
 ggqqplot(pivot$total)
 
-# normality was not met -> prepare data frame summary
-dplyr::group_by(pivot, session) %>%
-  dplyr::summarise(count = n(), median = median(total, na.rm = TRUE), IQR = IQR(total, na.rm = TRUE))
-
 # visualize groups
 ggboxplot(pivot, x = "session", y = "total")
 
+### normality was meet 
+t.test(pivotReg$total, pivotNew$total, paired = TRUE, alternative = "two.sided")
+
+# normality was not met -> prepare data frame summary
+dplyr::group_by(pivot, session) %>%
+  dplyr::summarise(count = n(), median = median(total, na.rm = TRUE), IQR = IQR(total, na.rm = TRUE))
 
 # test normality not met 
 wilcox.test(pivot$total[pivot$session=="reg"], pivot$total[pivot$session=="new"], paired=T)
@@ -706,66 +784,70 @@ wilcoxsign_test(pivot$total[pivot$session=="reg"] ~ pivot$total[pivot$session=="
 # plot 
 library(ggplot2) #Main package for graph
 library(ggthemes)
-ggplot(pivot, aes(factor(participant), total, fill = session)) + 
+ggplot(pivot, aes(factor(participant), total, fill = factor(session, levels=c("reg", "new")))) + 
   geom_bar(stat="identity", position = "dodge") + 
   ggtitle("Total duration of interactions per session") +
-  xlab("Participants") + ylab("Total duration of interactions (seconds)")
+  xlab("Participants") + ylab("Duration per session") + labs(fill = "Sessions")
 
 # -------~~ type --------
+# prepare data frame
 pivot <- df %>%
   dplyr::select(items, type, session, p_corrected, duration) %>%
   dplyr::group_by(type, p_corrected) %>%
   dplyr::summarise(total = sum(duration), n = length(items))
 
+# new data frame selection
+pivot <- df %>%
+  # dplyr::select(items, session, p_corrected) %>%
+  dplyr::select(items, type, session, participant, duration) %>%
+  #dplyr::group_by(session, p_corrected) %>%
+  # dplyr::filter(participant < 20) %>% # filter participant
+  dplyr::group_by(session, type, participant) %>%
+  dplyr::summarise(total = sum(duration), n = length(items))
+
 # re-order type
-pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
 
 # all.aov summary
 all.aov <- one_anova(pivot, 1)
 
+# plot proportions
+library(ggplot2) #Main package for graph
+library(ggthemes)
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "new")
+
+
+n <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +  
+  geom_bar(stat="identity", position = "fill") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF")) +
+  ggtitle("Proportion of duration by type of item") +
+  xlab("Participants") + ylab("Proportion of duration") + labs(fill = "Type", subtitle = "new sessions") 
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "reg")
+
+r <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +  
+  geom_bar(stat="identity", position = "fill") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF")) +
+  ggtitle("Proportion of duration by type of item") +
+  xlab("Participants") + ylab("Proportion of duration") + labs(fill = "Type", subtitle = "regular sessions") 
+
+plot_grid(r, n, ncol =1)
+
 
 # --- previous analysis
-
-# anova
-aov.df <- aov(duration ~ type, data = pivot)
-
-# summary of the analysis
-summary(aov.df)
-
-# check normatlity for anova
-# a. Homogeneity of variances
-plot(aov.df, 1)
-
-# b. Levene test (if p less than 0.5 ---> violation of assumption)
-leveneTest(total~type, data = pivot)
-
-# c. check for distributions
-ggplot(pivot, aes(x=total, fill=type)) + geom_density(alpha=.3)
-
-# anova assumptions are not meet
-kruskal.test(total ~ type, data = pivot)
-
-# find wich pairs are different
-pairwise.wilcox.test(pivot$total, pivot$type,
-                     p.adjust.method = "BH")
-# global test
-compare_means(total ~ type,  data = pivot)
-
-# if significant do a dunn's test
-dunnTest(total~type, data = pivot)
 
 # set comparisons
 my_comparisons <-  list(c("c", "u"), c("u", "e"), c("c", "e"))
 
-ggboxplot(pivot, x = "type", y = "total",
-          color = "type", add = "jitter") +
-  stat_compare_means(comparisons = my_comparisons) +      # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 32000) +                     # Add global p-value
-  ggtitle("Duration and Type")
+ggboxplot(pivot, x = "type", y = "total", color = "type", add = "jitter") +
+  stat_compare_means(comparisons = my_comparisons) +                           # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 32000) + ggtitle("Duration and Type")           # Add global p-value
+  
 
-# mean and sd
-pivot %>% dplyr::group_by(type) %>%
-  dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+
 
 # -------~~ categories --------
 # -------~~ categories c --------
@@ -1051,7 +1133,6 @@ pivot <- df %>%
 # -------~~ sessions --------
 
 ### grouping
-
 # frequencies items sessions
 pivot <- df %>%
   dplyr::group_by(items, session, participant) %>%
@@ -1059,12 +1140,15 @@ pivot <- df %>%
   dplyr::group_by(session, participant) %>%
   dplyr::summarise(total = length(participant))
 
-### unique
+# order data frame
+pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
+data_summary(pivot$total)
 
+### unique
 # frequencies items sessions
 pivot <- df %>%
-  dplyr::group_by(items, items_uniq, session, participant) %>%
-  dplyr::distinct(items) %>%
+  dplyr::group_by(items, items_uniq, type, session, participant) %>%
+  dplyr::distinct(items, items_uniq) %>%
   dplyr::group_by(session, participant) %>%
   dplyr::summarise(total = length(participant))
 
@@ -1087,17 +1171,16 @@ pivot %>% ggplot(aes(x=session, y=total, fill = session)) +
   ggtitle("Total Items by Sessions")
 
 # plot 
-ggplot(pivot, aes(factor(participant), total, fill = session)) + 
+ggplot(pivot, aes(factor(participant), total,  fill = factor(session, levels=c("reg", "new")))) + 
   geom_bar(stat="identity", position = "dodge") + 
   ggtitle("Total number of items involved per session") +
-  xlab("Participants") + ylab("Total number of items involved per session")
+  xlab("Participants") + ylab("Items involved per session session") + labs(fill = "Sessions", subtitle = "distinct")
+
 
 t.summary <- pivot %>%                          # Specify data frame
   group_by(session) %>%                         # Specify group indicator
   summarise_at(vars(total),                     # Specify column
   list(mean = mean, sd = sd))                   # Specify function
-
-
 
 
 # -------~~ type --------
@@ -1110,6 +1193,16 @@ pivot <- df %>%
   dplyr::group_by(type, p_corrected) %>%
   dplyr::summarise(total = length(p_corrected))
 
+
+### grouping type
+pivot <- df %>%
+  dplyr::select(items, type, session, participant) %>%
+  dplyr::group_by(type, session, participant) %>%
+  dplyr::distinct(items) %>%
+  dplyr::group_by(type, session, participant) %>%
+  dplyr::summarise(total = length(participant))
+
+
 ### unique
 pivot <- df %>%
   dplyr::select(items, items_uniq, type, p_corrected) %>%
@@ -1117,10 +1210,43 @@ pivot <- df %>%
   dplyr::distinct(items, items_uniq) %>%
   dplyr::summarise(total = length(p_corrected))
 
+### unique type 
+pivot <- df %>%
+  dplyr::select(items, items_uniq, type, session, participant) %>%
+  dplyr::group_by(type, session, participant) %>%
+  dplyr::distinct(items, items_uniq) %>%
+  dplyr::group_by(type, session, participant) %>%
+  dplyr::summarise(total = length(participant))
+
 # re-order type
 pivot$type <- ordered(pivot$type, levels = c("c", "u", "e"))
 
 all.aov<- one_anova(pivot, 1)
+
+# plot proportions
+library(ggplot2) #Main package for graph
+library(ggthemes)
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "new")
+
+n <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +  
+  geom_bar(stat="identity", position = "fill") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF")) +
+  ggtitle("Listin the Items Involved in each Session (distinct)") +
+  xlab("Participants") + ylab("Proportion of Items Involved") + labs(fill = "Type", subtitle = "new sessions") 
+
+pivotF <- pivot %>%
+  dplyr::filter(session == "reg")
+
+r <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +  
+  geom_bar(stat="identity", position = "fill") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF")) +
+  ggtitle("Listin the Items Involved in each Session (distinct)") +
+  xlab("Participants") + ylab("Proportion of duration") + labs(fill = "Type", subtitle = "regular sessions") 
+
+plot_grid(r, n, ncol =1)
+
 
 
 
@@ -1394,7 +1520,9 @@ pivot <- df %>%
   dplyr::group_by(items, type, p_corrected) %>%
   dplyr::summarise(totalTemp = n_distinct(items_uniq)) %>%
   dplyr::group_by(items, type) %>%
-  dplyr::summarise(unique = sum(totalTemp), total = n_distinct(p_corrected), mean = unique/total, min = min(totalTemp), max = max(totalTemp))
+  dplyr::summarise(unique = sum(totalTemp), total = n_distinct(p_corrected), mean = round(unique/total, digits = 1), min = min(totalTemp), max = max(totalTemp))
+# add rank 
+pivot$ranks <- all.ranks$rank[match(pivot$items, all.ranks$items)]
 
 # filter items 
 subset.c <- pivot %>%
@@ -1411,8 +1539,9 @@ subset.e <- pivot %>%
   dplyr::filter(type == "e") %>%
   dplyr::arrange(ranks)
 
+### grouping
 # create data frame
-inter.df <- data.fram
+inter.df <- data.frame()
 cols.names <- c("item", "type", "sessions", "percentage") # names of columnsinter.df <- data.frame()
 for (col in cols.names){inter.df[[col]] <- as.numeric()}
 inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
@@ -1423,6 +1552,21 @@ cols.df <- c(1:4)
 inter.df[1:10, c(1:4)] <- subset.c[1:10, cols.df]
 inter.df[11:20, c(1:4)] <- subset.u[1:10, cols.df]
 inter.df[21:30, c(1:4)] <- subset.e[1:10, cols.df]
+
+
+### distinct
+# create data frame
+inter.df <- data.frame()
+cols.names <- c("item", "type", "unique",  "sessions", "mean") # names of columnsinter.df <- data.frame()
+for (col in cols.names){inter.df[[col]] <- as.numeric()}
+inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
+
+# set cols data frame
+cols.df <- c(1:5)
+
+inter.df[1:10, c(1:5)] <- subset.c[1:10, cols.df]
+inter.df[11:20, c(1:5)] <- subset.u[1:10, cols.df]
+inter.df[21:30, c(1:5)] <- subset.e[1:10, cols.df]
 
 
 cat("------------------ ", "data frame most items")

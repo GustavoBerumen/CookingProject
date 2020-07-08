@@ -79,6 +79,7 @@ library(knitr)
 library(tinytex)
 library(cgwtools)
 library(gapminder)
+library(qdapRegex)
 
 # hrbrthemes::import_roboto_condensed()
 # devtools::install_github("hrbrmstr/waffle")

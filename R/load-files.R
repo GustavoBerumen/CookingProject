@@ -172,5 +172,60 @@ reg.new.con.cat <- reg.new.con.cat[order(reg.new.con.cat$p_corrected, reg.new.co
 #re-order columns
 reg.new.con.cat <- reg.new.con.cat[, c(3, 2, 1,4:5, 14, 6:9, 11:12, 13, 10)]
 
+
+### load files of three data (place, form, and activities)
+# create data frame to add data
+### create data frame to store calculations
+cols.names <-  c("p", "session", "place_1", "place_2", "activity_1", "activity_2", "form_1", "form_2", "item", "type") # names of columns 
+three.list <- data.frame()
+for (col in cols.names){three.list[[col]] <- as.numeric()}
+
+# define cols to subset 
+ncols <- c(2, 3, 9:14)
+
+# define path
+for (t in 1:1){
+  if (t == 1){
+    three_path <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs/c"
+    type <- "c"
+  }
+  else if (t == 2)
+  {
+    three_path <- "C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject/outputs/u"
+    type <- "u"
+  }
+  # get list of items
+  three_list <- list.files(path = three_path, pattern = ".xlsx", full.names = TRUE)
+  
+  
+  # assign files to data frame
+  for (i in 1:length(three_list)){
+    
+    # assign read file to temporary object 
+    temp_df <- as.data.frame(read_excel(three_list[i],  sheet = 1))
+    
+    # extract name of item
+    temp_item <- qdapRegex::ex_between(three_list[i], "_", "_")[[1]]
+    
+    # find position of NA 
+    pos_NA <- which(temp_df[3] == "NA")-1
+    
+    # subset df 
+    temp_dfS <- temp_df[1:pos_NA, ncols]
+    
+    # add item name
+    temp_dfS$item <-  temp_item
+    temp_dfS$typ <- type
+    
+    # add data bottom of data frame 
+    s_r <- length(three.list$p)+1
+    e_r <- length(temp_dfS$item) + s_r -1 
+    three.list[c(s_r: e_r), ] <- temp_dfS
+  }
+}
+
+
+
+
 #return to working directory
 setwd(dirname(home_path))
