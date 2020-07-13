@@ -6,15 +6,12 @@ import numpy as np
 import moviepy
 from moviepy.editor import *
 
-def createVideos( item, typeItem ):
+def createVideos(item, typeItem):
     
     #defines the max duration of the videos
-<<<<<<< HEAD
-    maxDur = 6
-=======
+    # maxDur = 6
+
     maxDur = 10
->>>>>>> 8fa42092a3258358af56f8ea7f22ff4df400e7d9
-    
     item = str(item)
     
     #set the name of csv file 
@@ -95,35 +92,24 @@ def createVideos( item, typeItem ):
             
         # make output name
         if i <9:
-<<<<<<< HEAD
+
             output_name = output_path + "0" + str(i+1) + '_' + item + '_' + video_name 
-=======
-            output_name = output_path + "0" + str(i+1) + '_' + item + video_name 
->>>>>>> 8fa42092a3258358af56f8ea7f22ff4df400e7d9
+
+            # output_name = output_path + "0" + str(i+1) + '_' + item + video_name 
+            
         else:
-            output_name = output_path + str(i+1) + '_' + item + '_' + video_name 
+            output_name = output_path + str(i+1) + '_' + item + '_' + video_name         
             
         # Write the result to a file
         clip.write_videofile(output_name)
-        
-<<<<<<< HEAD
-       
+
     return
       
 items = ["plate", "container"] 
-=======
-    return
-      
-            
-createVideos('food', 'c')  
- 
-items = ["cookingSpoon", "pan", "pot", "bowl", "knife", "spoon", "lid",
-        "towel", "rBook", "phone", "mixingBowl", "colander", "tray", "fork",
-        "computer", "measuringJar", "glassWine", "processor", "tablet"] 
->>>>>>> 8fa42092a3258358af56f8ea7f22ff4df400e7d9
- 
+typeItem = "u"
+
 lenItems = len(items)
      
 for i in range(lenItems):
     thisItem = items[i]
-    createVideos(thisItem, 'u')
+    createVideos(thisItem, typeItem)

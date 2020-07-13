@@ -122,7 +122,7 @@ one_anova <- function(pivot, f1){
   # summary statistics
   desc.df <-
     pivot %>% dplyr::group_by(!!rlang::sym(names(.)[f1])) %>%
-    dplyr::summarise(count = n(), mean = mean(total, na.rm = TRUE), sd = sd(total, na.rm = TRUE), total = sum(total))
+    dplyr::summarise(count = n(), mean = round(mean(total, na.rm = TRUE), digits = 1), sd = round(sd(total, na.rm = TRUE), digits = 1), total = sum(total))
 
   # visualize data [version a]
   desc.pl <-
@@ -484,7 +484,7 @@ ggplot(pivot, aes(x = session, y = total, fill = type)) +
   ggtitle("Mean of interaction by type of item") +
   xlab("Session") + ylab("Number of interactions") + labs(fill = "Type", subtitle = "regular and new sessions")
 
-# plot anova 
+### plot anova 
 pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
 
 ggboxplot(pivot, x = "type", y = "total", fill = "session", add = "jitter") +
@@ -500,8 +500,9 @@ ggboxplot(pivot, x = "type", y = "total", fill = "session", add = "jitter") +
 # prepare data
 pivot <- df %>%
   filter(type == "c") %>%
-  dplyr::select(items, items_uniq, category, p_corrected) %>%
-  dplyr::group_by(items, category, p_corrected) %>%
+  dplyr::select(items, items_uniq, category, p_corrected, session) %>%
+  dplyr::group_by(items, category, p_corrected) %>% 
+  # dplyr::filter(session == "new") %>% 
   dplyr::summarise(total = n())
 
 # anova summary class
@@ -511,23 +512,30 @@ all.aov <- one_anova(pivot, 2)
 # prepare data
 pivot <- df %>%
   filter(type == "u") %>%
-  dplyr::select(items, items_uniq, category, p_corrected) %>%
+  dplyr::select(items, items_uniq, category, p_corrected, session) %>%
   dplyr::group_by(items, category, p_corrected) %>%
+  # dplyr::filter(session == "new") %>% 
   dplyr::summarise(total = n())
 
 # anova summary class
 all.aov <- one_anova(pivot, 2)
+
+test <- all.aov@desc.df
+cb(test)
 
 # -------~~ categories e--------
 # prepare data
 pivot <- df %>%
   filter(type == "e") %>%
-  dplyr::select(items, items_uniq, category, p_corrected) %>%
+  dplyr::select(items, items_uniq, category, p_corrected, session) %>%
   dplyr::group_by(items, category, p_corrected) %>%
+  dplyr::filter(session == "new") %>%
   dplyr::summarise(total = n())
 
 # anova summary class
 all.aov <- one_anova(pivot, 2)
+
+test <- all.aov@desc.df
 
 # -------~~ categories previous --------
 
@@ -680,45 +688,54 @@ pivot <- df %>%
 
 # data frame summary 
 pivot_items <- desc_df(pivot, 1)
-
 # add type to data frame
 items.list.m <-  items.list[, 1:2]
 names(items.list.m)[1] <- "items"
 # vlookup like function in t
 pivot_items <- (merge(items.list.m, pivot_items, by = 'items'))
-
 # sort pivot items
 pivot_items <- pivot_items %>%
+  dplyr::filter(session == "reg") %>%
   dplyr::arrange(desc(total))
-  
 
-# filter items 
+# items c
 subset.c <- pivot_items  %>%
   dplyr::filter(type == "c") %>%
   dplyr::arrange(desc(total))
-#create ranks df
-subset.c$rank <- c(1:length(subset.c$items))
-c.ranks <- subset.c[, c(1, 9)]
+subset.c <- subset.c %>%
+  dplyr::mutate(per = round(subset.c$total/sum(subset.c$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
+  dplyr::mutate(rank = row_number())
 
-# filter items 
+
+# items u
 subset.u <- pivot_items  %>%
   dplyr::filter(type == "u") %>%
   dplyr::arrange(desc(total))
-#create ranks df
-subset.u$rank <- c(1:length(subset.u$items))
-u.ranks <- subset.u[, c(1, 9)]
+subset.u <- subset.u %>%
+  dplyr::mutate(per = round(subset.u$total/sum(subset.u$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
+  dplyr::mutate(rank = row_number())
 
-# filter items 
+
+# items e
 subset.e <- pivot_items  %>%
   dplyr::filter(type == "e") %>%
   dplyr::arrange(desc(total))
-#create ranks df
-subset.e$rank <- c(1:length(subset.e$items))
+subset.e <- subset.e %>%
+  dplyr::mutate(per = round(subset.e$total/sum(subset.e$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = cumsum(100*per/sum(per))) %>%
+  dplyr::mutate(rank = row_number())
+
+
+#filter ranks df
+c.ranks <- subset.c[, c(1, 9)]
+u.ranks <- subset.u[, c(1, 9)]
 e.ranks <- subset.e[, c(1, 9)]
 
-all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
-
-resave(all.ranks, file = "fname.RData")
+# save all ranks
+# all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
+# resave(all.ranks, file = "fname.RData")
 
 # create data frame
 cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
@@ -733,11 +750,152 @@ inter.df[11:20, 1:8] <- subset.u[1:10, cols.df]
 inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
 
 
+### plots 
+ggboxplot(subset.c, x = "items", y = "per", fill = "per")
+
+sub.c <- subset.c %>%
+  dplyr::filter(per < 10)
+
+r <- ggplot(sub.c, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "CPGs", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+sub.u <- subset.u %>%
+  dplyr::filter(per < 10)
+
+n <- ggplot(sub.u, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "utensils", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+plot_grid(r, n, ncol =1)
+
+
+# -------~~ data most items sessions --------
+# prepare data
+pivot <- df %>%
+  dplyr::group_by(items, category, type, session, p_corrected) %>%
+  dplyr::summarise(total = n()) %>%
+  dplyr::filter(session == "new") # select session
+
+# data frame summary 
+pivot_items <- desc_df(pivot, 1)
+# add type to data frame
+items.list.m <-  items.list[, 1:2]
+names(items.list.m)[1] <- "items"
+# vlookup like function in t
+pivot_items <- (merge(items.list.m, pivot_items, by = 'items'))
+# sort pivot items
+pivot_items <- pivot_items %>%
+  dplyr::arrange(desc(total))
+
+
+# items c
+subset.c <- pivot_items  %>%
+  dplyr::filter(type == "c") %>%
+  dplyr::arrange(desc(total))
+subset.c <- subset.c %>%
+  dplyr::mutate(per = round(subset.c$total/sum(subset.c$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
+  dplyr::mutate(rank = row_number())
+
+# subselect data frame by session
+# c.reg <- subset.c
+# c.new <- subset.c
+# lookup function to add position in other session
+c.both <- (merge(c.reg, c.new, by = 'items'))
+
+
+# items u
+subset.u <- pivot_items  %>%
+  dplyr::filter(type == "u") %>%
+  dplyr::arrange(desc(total))
+subset.u <- subset.u %>%
+  dplyr::mutate(per = round(subset.u$total/sum(subset.u$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
+  dplyr::mutate(rank = row_number())
+
+# subselect data frame by session
+#u.reg <- subset.u
+# u.new <- subset.u
+# lookup function to add position in other session
+u.both <- (merge(u.reg, u.new, by = 'items'))
+
+
+# items e
+subset.e <- pivot_items  %>%
+  dplyr::filter(type == "e") %>%
+  dplyr::arrange(desc(total))
+subset.e <- subset.e %>%
+  dplyr::mutate(per = round(subset.e$total/sum(subset.e$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = cumsum(100*per/sum(per))) %>%
+  dplyr::mutate(rank = row_number())
+# subselect data frame by session
+# e.reg <- subset.e
+e.new <- subset.e
+# lookup function to add position in other session
+e.both <- (merge(e.reg, e.new, by = 'items'))
+
+
+
+
+
+#filter ranks df
+c.ranks <- subset.c[, c(1, 9)]
+u.ranks <- subset.u[, c(1, 9)]
+e.ranks <- subset.e[, c(1, 9)]
+
+# save all ranks
+# all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
+# resave(all.ranks, file = "fname.RData")
+
+# create data frame
+cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
+inter.df <- data.frame()
+for (col in cols.names){inter.df[[col]] <- as.numeric()}
+inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
+
+cols.df <- c(1, 2, 4:9)
+
+inter.df[1:10, 1:8] <- subset.c[1:10, cols.df]
+inter.df[11:20, 1:8] <- subset.u[1:10, cols.df]
+inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
+
+
+### plots 
+ggboxplot(subset.c, x = "items", y = "per", fill = "per")
+
+sub.c <- subset.c %>%
+  dplyr::filter(per < 10)
+
+r <- ggplot(sub.c, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "CPGs", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+sub.u <- subset.u %>%
+  dplyr::filter(per < 10)
+
+n <- ggplot(sub.u, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "utensils", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+plot_grid(r, n, ncol =1)
+
+
+
 # ================ 2 DURATION ================
 # -------~~ sessions --------
 # prepare data frame
 pivot <- df %>%
   dplyr::group_by(session, participant) %>%
+  dplyr::filter(participant < 20) %>% # filter participant
   dplyr::summarise(total = sum(duration)) #%>%
   # dplyr::filter(participant < 20)  # filter participant
   
@@ -765,7 +923,9 @@ ggqqplot(pivot$total)
 ggboxplot(pivot, x = "session", y = "total")
 
 ### normality was meet 
-t.test(pivotReg$total, pivotNew$total, paired = TRUE, alternative = "two.sided")
+t.test(pivotNew$total, pivotReg$total,  paired = TRUE, alternative = "two.sided")
+
+a <- t.test(pivotReg$total, pivotNew$total, paired = TRUE, alternative = "two.sided")
 
 # normality was not met -> prepare data frame summary
 dplyr::group_by(pivot, session) %>%
@@ -789,6 +949,43 @@ ggplot(pivot, aes(factor(participant), total, fill = factor(session, levels=c("r
   ggtitle("Total duration of interactions per session") +
   xlab("Participants") + ylab("Duration per session") + labs(fill = "Sessions")
 
+### correlation 
+cor(pivotReg$total, pivotNew$total,  method = "pearson", use = "complete.obs")
+#
+res <- cor.test(pivotReg$total, pivotNew$total, method = "pearson")
+
+# data to plot
+pivotPlot <- pivotReg[, 2:3]
+names(pivotPlot)[2] <- "reg"
+pivotPlot$new <- pivotNew$total
+
+# order data
+pivotPlot <- pivotPlot[ order(pivotPlot[,2] ), ]
+
+# plot correlation between two variables
+ggscatter(pivotPlot, x = "reg", y = "new", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "duration of interactions regular sessions", ylab = "duration of interactions new sessions") +
+  ggtitle("Duration of Interactions in Regular vs New Meal")
+
+
+# plot t test 
+library(ggplot2)
+library(ggsignif)
+ggboxplot(pivot, x = "session", y = "total", fill = "session", add = "jitter", xlab = "sessions", ylab = "number of interactions")  +
+  stat_compare_means(method = "t.test", label = "p.format", paired = TRUE) +
+  ggtitle("Mean of interactions by session") +
+  labs(subtitle = "regular and new sessions")
+
+### plot differences 
+# plot t test 
+ggboxplot(pivot, x = "session", y = "total", fill = "session", add = "jitter", xlab = "sessions", ylab = "duration of interactions")  +
+  stat_compare_means(method = "t.test", label = "p.format", paired = TRUE) +
+  ggtitle("Mean of duration of interactions by session") +
+  labs(subtitle = "regular and new sessions")
+
+
 # -------~~ type --------
 # prepare data frame
 pivot <- df %>%
@@ -807,9 +1004,13 @@ pivot <- df %>%
 
 # re-order type
 pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
+pivot$session <- ordered(pivot$session, levels = c("reg", "new"))
+
 
 # all.aov summary
 all.aov <- one_anova(pivot, 1)
+
+two.aov <- two_anova(pivot, 1, 3)
 
 # plot proportions
 library(ggplot2) #Main package for graph
@@ -836,17 +1037,33 @@ r <- ggplot(pivotF, aes(x = factor(participant), y = total,  fill = type)) +
 
 plot_grid(r, n, ncol =1)
 
+### plot interactions by type 
+ggplot(pivot, aes(x = session, y = total, fill = type)) + 
+  geom_bar(stat="identity", position = "dodge") +
+  ggtitle("Mean of interaction by type of item") +
+  xlab("Session") + ylab("Number of interactions") + labs(fill = "Type", subtitle = "regular and new sessions")
 
-# --- previous analysis
 
-# set comparisons
-my_comparisons <-  list(c("c", "u"), c("u", "e"), c("c", "e"))
+### plot anova 
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
 
-ggboxplot(pivot, x = "type", y = "total", color = "type", add = "jitter") +
-  stat_compare_means(comparisons = my_comparisons) +                           # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 32000) + ggtitle("Duration and Type")           # Add global p-value
-  
+ggboxplot(pivot, x = "type", y = "total", fill = "type", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Mean of duration of interactions by type") +
+  xlab("Type") + ylab("Duration of interactions") + labs(fill = "Session", subtitle = "regular and new sessions")
 
+### plot anova 
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
+
+ggboxplot(pivot, x = "type", y = "total", fill = "type", add = "jitter") +
+  # scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Mean of duration of interactions by type and session") +
+  xlab("Type") + ylab("Duration of interactions") + labs(fill = "Session", subtitle = "regular and new sessions")
+
+ggboxplot(pivot, x = "session", y = "total", fill = "type", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Mean of duration of interactions by type and session") +
+  xlab("Type") + ylab("Duration of interactions") + labs(fill = "Session", subtitle = "regular and new sessions")
 
 
 # -------~~ categories --------
@@ -856,7 +1073,6 @@ ggboxplot(pivot, x = "type", y = "total", color = "type", add = "jitter") +
 #   dplyr::select(items, items_uniq, type, category, p_corrected, duration)
 # # rename duration to total
 # names(pivot)[5] <- "total"
-
 
 # prepare data
 pivot <- df %>%
@@ -1108,6 +1324,128 @@ dur.df <- dur.df %>%
 pivot <- df %>%
   dplyr::group_by(items, type) %>%
   dplyr::summarise(min = min(duration), max = max(duration), total = sum(duration), n = length(items), avg = total/n) 
+
+# -------~~ data most items sessions --------
+
+# prepare data
+# pivot <- df %>%
+#   dplyr::group_by(items, type, participant, session) %>%  
+#   #dplyr::filter(session == "new") %>% # select session
+#   dplyr::summarise(n = length(items), mean = round(mean(duration), digits = 1), sd = round(sd(duration), digits =1), min = min(duration), max = max(duration), total = sum(duration)) %>%
+#   dplyr::arrange(desc(total))  
+# pivot$ranks <- all.ranks$rank[match(pivot$items, all.ranks$items)]
+
+# prepare data version two
+pivot_items <- df %>%
+  dplyr::group_by(items, type) %>%  
+  # dplyr::filter(session == "reg") %>% # select session
+  #dplyr::filter(session == "new") %>% # select session
+  dplyr::summarise(total = sum(duration), count = length(unique(p_corrected)), n = length (items), 
+                  mean = round(total/n, digits = 1), sd = round(sd(duration), 
+                  digits =1), min = min(duration), max = max(duration)) %>%
+  dplyr::arrange(desc(total))
+
+# select items 
+i <- "c"
+
+# items c
+subset.c <- pivot_items  %>%
+  dplyr::filter(type == i) %>%
+  dplyr::arrange(desc(total))
+subset.c$per <- round(subset.c$total/sum(subset.c$total)*100, digits = 2)
+subset.c$cum <- round(cumsum(100*subset.c$per/sum(subset.c$per)), digits =1)
+subset.c$rank <- c(1:length(subset.c$total))
+
+
+# subselect data frame by session
+# c.reg <- subset.c
+# c.new <- subset.c
+# lookup function to add position in other session
+c.both <- (merge(c.reg, c.new, by = 'items'))
+
+
+
+# items u
+subset.u <- pivot_items  %>%
+  dplyr::filter(type == "u") %>%
+  dplyr::arrange(desc(total))
+subset.u <- subset.u %>%
+  dplyr::mutate(per = round(subset.u$total/sum(subset.u$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
+  dplyr::mutate(rank = row_number())
+
+# subselect data frame by session
+#u.reg <- subset.u
+# u.new <- subset.u
+# lookup function to add position in other session
+u.both <- (merge(u.reg, u.new, by = 'items'))
+
+
+# items e
+subset.e <- pivot_items  %>%
+  dplyr::filter(type == "e") %>%
+  dplyr::arrange(desc(total))
+subset.e <- subset.e %>%
+  dplyr::mutate(per = round(subset.e$total/sum(subset.e$total)*100, digits = 2)) %>%
+  dplyr::mutate(cum = cumsum(100*per/sum(per))) %>%
+  dplyr::mutate(rank = row_number())
+# subselect data frame by session
+# e.reg <- subset.e
+e.new <- subset.e
+# lookup function to add position in other session
+e.both <- (merge(e.reg, e.new, by = 'items'))
+
+
+
+
+
+#filter ranks df
+c.ranks <- subset.c[, c(1, 9)]
+u.ranks <- subset.u[, c(1, 9)]
+e.ranks <- subset.e[, c(1, 9)]
+
+# save all ranks
+# all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
+# resave(all.ranks, file = "fname.RData")
+
+# create data frame
+cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
+inter.df <- data.frame()
+for (col in cols.names){inter.df[[col]] <- as.numeric()}
+inter.df[nrow(inter.df)+ 30,] <- NA #add empty NAs
+
+cols.df <- c(1, 2, 4:9)
+
+inter.df[1:10, 1:8] <- subset.c[1:10, cols.df]
+inter.df[11:20, 1:8] <- subset.u[1:10, cols.df]
+inter.df[21:30, 1:8] <- subset.e[1:10, cols.df]
+
+
+### plots 
+ggboxplot(subset.c, x = "items", y = "per", fill = "per")
+
+sub.c <- subset.c %>%
+  dplyr::filter(per < 10)
+
+r <- ggplot(sub.c, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "CPGs", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+sub.u <- subset.u %>%
+  dplyr::filter(per < 10)
+
+n <- ggplot(sub.u, aes(x=rank, y=per)) + 
+  geom_point(color="black") + 
+  ggtitle("Percentage of the Items' Interactions by Type") +
+  xlab("items") + ylab("percentage of interactions") + labs(subtitle = "utensils", caption = "Items with a percentage equal to or greater than ten are not displayed") + 
+  geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5)
+
+plot_grid(r, n, ncol =1)
+
+
+
 
 # ================ 3 LISTING: GROUPING and UNIQUE ================
 # -------~~ all --------
