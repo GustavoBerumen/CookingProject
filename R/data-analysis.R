@@ -38,8 +38,8 @@ cb <- function(df, sep="\t", dec=",", max.size=(200*1000)){
 # function add rank
 addRank <- function(df, dfRank){
   df <- (merge(df, dfRank, by = 'items'))
-  df <- df %>%
-    dplyr::filter(rank < 11)
+  # df <- df %>%
+  #   dplyr::filter(rank < 11)
   df <- df[order(df$rank, decreasing = FALSE), ]
   return(df)
 }
@@ -834,13 +834,6 @@ subset.c <- subset.c %>%
   dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
   dplyr::mutate(rank = row_number())
 
-# subselect data frame by session
-# c.reg <- subset.c
-# c.new <- subset.c
-# lookup function to add position in other session
-c.both <- (merge(c.reg, c.new, by = 'items'))
-
-
 # items u
 subset.u <- pivot_items  %>%
   dplyr::filter(type == "u") %>%
@@ -849,13 +842,6 @@ subset.u <- subset.u %>%
   dplyr::mutate(per = round(subset.u$total/sum(subset.u$total)*100, digits = 1)) %>%
   dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1)) %>%
   dplyr::mutate(rank = row_number())
-
-# subselect data frame by session
-#u.reg <- subset.u
-# u.new <- subset.u
-# lookup function to add position in other session
-u.both <- (merge(u.reg, u.new, by = 'items'))
-
 
 # items e
 subset.e <- pivot_items  %>%
@@ -867,24 +853,15 @@ subset.e <- subset.e %>%
   dplyr::mutate(rank = row_number())
 
 
-# subselect data frame by session
-# e.reg <- subset.e
-e.new <- subset.e
-# lookup function to add position in other session
-e.both <- (merge(e.reg, e.new, by = 'items'))
-
-
-
-
 
 #filter ranks df
-c.ranks <- subset.c[, c(1, 9)]
-u.ranks <- subset.u[, c(1, 9)]
-e.ranks <- subset.e[, c(1, 9)]
+c.ranks <- subset.c[, c(1, 11)]
+u.ranks <- subset.u[, c(1, 11)]
+e.ranks <- subset.e[, c(1, 11)]
 
 # save all ranks
-# all.ranks <- rbind(c.ranks, u.ranks, e.ranks)
-# resave(all.ranks, file = "fname.RData")
+# reg.ranks <- rbind(c.ranks, u.ranks, e.ranks)
+# resave(reg.ranks, file = "fname.RData")
 
 # create data frame
 cols.names <- c("item", "type", "mean", "sd", "min", "max", "mean", "total") # names of columns
@@ -1570,6 +1547,29 @@ pivot <- df %>%
 
 # -------~~ sessions --------
 
+#### only regular 
+# frequencies items sessions
+pivot <- df %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::filter(items != "food") %>%
+  dplyr::group_by(items, participant, session) %>%
+  dplyr::distinct(items) %>%
+  dplyr::group_by(participant, session) %>%
+  dplyr::summarise(total = length(participant))
+
+# order data frame
+pivot <- pivot[order(pivot$session, decreasing = TRUE), ]
+data_summary(pivot$total)
+
+# plot only regular
+ggplot(pivot, aes(x = participant, y = total, fill = session)) + 
+  geom_bar(stat="identity", position = "dodge") +
+  ggtitle("Items Involved per Session") +
+  xlab("Participant") + ylab("Number of Items Involved") + labs(subtitle = "grouping method") +
+  theme(legend.position = "none")
+
+
+---
 ### grouping
 # frequencies items sessions
 pivot <- df %>%
@@ -1589,6 +1589,9 @@ pivot <- df %>%
   dplyr::distinct(items, items_uniq) %>%
   dplyr::group_by(session, participant) %>%
   dplyr::summarise(total = length(participant))
+
+
+
 
 # check for normality (p should be greater than 0.05)
 shapiro.test(pivot$total)
@@ -1623,6 +1626,39 @@ t.summary <- pivot %>%                          # Specify data frame
 
 # -------~~ type --------
 
+### grouping
+pivot <- df %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::filter(items != "food") %>%
+  dplyr::group_by(type, participant) %>%
+  dplyr::distinct(items) %>%
+  dplyr::summarise(total = length(participant))
+
+# re-order type
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
+
+all.aov<- one_anova(pivot, 1)
+
+### plot anova
+my_comparisons <-  list(c("c", "e"),  c("u", "e"))
+ggboxplot(pivot, x = "type", y = "total", fill = "type", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Items Involved per Session") +
+  xlab("Participant") + ylab("Number of Items Involved") + labs(fill = "Type", subtitle = "grouping method") +
+  theme(legend.position = "right") +
+  geom_signif(comparisons = my_comparisons[1], y_position = 40, 
+              map_signif_level=TRUE,  tip_length = 0) +
+  geom_signif(comparisons = my_comparisons[2],  y_position = 36,
+              map_signif_level=TRUE, tip_length = 0) 
+
+
+
+
+
+
+
+---
+  
 ### grouping
 pivot <- df %>%
   dplyr::select(items, type, p_corrected) %>%
@@ -1936,6 +1972,38 @@ pivot %>% dplyr::group_by(category) %>%
 
 # -------~~ data most items --------
 
+### grouping
+pivot <- df %>%
+  dplyr::filter(session == "reg", items != "food") %>%
+  dplyr::group_by(items, session, p_corrected, type) %>%
+  dplyr::distinct(items) %>%
+  dplyr::group_by(items, type) %>%
+  dplyr::summarise(total = length(items), per = round(total/20*100, digits =1)) %>% 
+  dplyr::arrange(desc(total))
+
+# add rank 
+pivot$ranks <- all.ranks$rank[match(pivot$items, all.ranks$items)]
+
+
+# items c
+subset.c <- pivot %>%
+  dplyr::filter(type == "c")
+subset.c$rank <- c(1:length(subset.c$total)) 
+
+# items u
+subset.u <- pivot %>%
+  dplyr::filter(type == "u")
+subset.u$rank <- c(1:length(subset.u$total))
+
+
+# items e
+subset.e <- pivot  %>%
+  dplyr::filter(type == "e")
+subset.e$rank <- c(1:length(subset.e$total))
+
+
+----
+  
 ### grouping
 pivot <- df %>%
   dplyr::group_by(items, session, p_corrected, type) %>%
@@ -2378,16 +2446,120 @@ dfR$start_gr <- as.factor(ceiling(dfR$start_rel/33.34))
 
 pivot <- dfR %>%
   dplyr::group_by(session, participant, start_gr) %>%
-  dplyr::summarise(total = length(start_gr)) 
+  dplyr::summarise(total = length(start_gr))
 names(pivot)[3] <- "sections"
-  
-
 # sort data frame
 pivot[order(pivot$session, decreasing = TRUE), ]
 
 # all anova
 all.aov <- one_anova(pivot, 3)
 
+
+####
+
+####### INTERACTIONS 
+
+pivot <- dfR %>%
+  dplyr::group_by(session, participant, start_gr) %>%
+  dplyr::summarise(total = length(start_gr)) %>%
+  dplyr::filter(session == "reg") 
+names(pivot)[3] <- "sections"
+# sort data frame
+pivot[order(pivot$session, decreasing = TRUE), ]
+
+# all anova
+all.aov <- one_anova(pivot, 3)
+
+ggboxplot(pivot, x = "sections", y = "total", fill = "sections", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Interactions across Stages") +
+  xlab("Sections") + ylab("Number of Interactions") + labs(fill = "Type", subtitle = "Interactions") +
+  theme(legend.position = "right")
+
+
+####### GROUPING
+
+pivot <- dfR %>%
+  dplyr::distinct(items, type, session, participant, start_gr) %>%
+  dplyr::group_by(type, participant, start_gr, session) %>%
+  dplyr::summarise(total = length(start_gr)) %>%
+  dplyr::filter(session == "reg") 
+names(pivot)[3] <- "sections"
+# sort data frame
+pivot[order(pivot$session, decreasing = TRUE), ]
+
+# all anova
+all.aov <- one_anova(pivot, 3)
+
+# plot anova
+my_comparisons <-  list(c("c", "e"),  c("u", "e"))
+
+ggboxplot(pivot, x = "sections", y = "total", fill = "sections", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Interactions across Stages") +
+  xlab("Sections") + ylab("Number of Interactions") + labs(fill = "Type", subtitle = "Interactions") +
+  theme(legend.position = "right")
+
+
+
+####### SELECT COLUMNS / FIRST APPEARANCE OF ITEMS 
+
+# prepare data frame for FIRST
+pivot <- dfR %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::select(items, type, start_gr, participant)
+
+### select first appearance of items 
+pivotFirst <- pivot %>%
+  dplyr::group_by(items, type, participant) %>% 
+  dplyr::filter(row_number()==1)
+
+# summarise 
+pivotA <- pivotFirst %>%
+  dplyr::distinct(items, start_gr, participant) %>%
+  dplyr::group_by(participant, start_gr) %>%
+  dplyr::summarise(total = length(start_gr))
+names(pivotA)[2] <- "sections"
+
+
+# all anova
+all.aov <- one_anova(pivotA, 2)
+
+# plot anova
+my_comparisons <-  list(c("1", "2"),  c("1", "3"))
+
+ggboxplot(pivotA, x = "sections", y = "total", fill = "sections", add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Items used for the first time") +
+  xlab("Sections") + ylab("Items used for the first time") + labs(fill = "Sections", subtitle = "regular sessions") +
+  theme(legend.position = "right") +
+  geom_signif(comparisons = my_comparisons[2], y_position = 60, map_signif_level=TRUE,  tip_length = 0) +
+  geom_signif(comparisons = my_comparisons[1], y_position = 50, map_signif_level=TRUE, tip_length = 0)
+
+### PLOT DOTTED LINE
+# prepare data frame for FIRST
+pivot <- dfR %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::select(items, type, start, participant)
+
+### select first appearance of items 
+pivotFirst <- pivot %>%
+  dplyr::group_by(items, type, participant) %>% 
+  dplyr::filter(row_number()==1) %>% 
+  dplyr::mutate(minute = ceiling(start/60)) %>%
+  dplyr::group_by(minute) %>%
+  dplyr::summarise(total = length(minute))
+
+### plot items start time
+ggplot(pivotFirst, aes(x=minute, y=total)) +
+  geom_bar(stat="identity")  +
+  ggtitle("Item used for the first time") +
+  xlab("minute") + ylab("number of items used for the first time") + labs(subtitle = "all participants") +
+  theme(legend.position = "right") 
+
+
+ggplot(data = pivotFirst, aes(x=minute, y=total)) +
+  geom_point(size = 2)
 
 # -------~~ sessions --------
 
@@ -2453,11 +2625,39 @@ two.aov <- two_anova(pivot, 1, 3)
 
 # -------~~ type --------
 
+
 # INTERACTIONS
 pivot <- dfR %>%
-  dplyr::group_by(type, p_corrected, start_gr) %>%  # remove type for two way anova
-  dplyr::summarise(total = length(start_gr))
+  dplyr::filter(session == "reg") %>% 
+  dplyr::group_by(type, participant, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr)) 
 names(pivot)[3] <- "sections"
+# re-order type
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
+
+
+# all anova two way
+two.aov <- two_anova(pivot, 1, 3)
+
+# plot two anova
+ggboxplot(pivot, x = "type", y = "total", fill = "sections",  add = "jitter") +
+  scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
+  ggtitle("Interactions across Stages") +
+  xlab("Type") + ylab("Number of Interactions") + labs(fill = "Sections", subtitle = "Interactions by type and section") +
+  theme(legend.position = "right")
+
+
+---
+  
+# INTERACTIONS
+pivot <- dfR %>%
+  dplyr::filter(session == "reg") %>% 
+  dplyr::group_by(type, p_corrected, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr)) 
+names(pivot)[3] <- "sections"
+
+# re-order type
+pivot$type <- ordered(pivot$type, levels = c("c", "e", "u"))
 
 
 # GROUPING
@@ -2554,11 +2754,31 @@ pivot <- dfR %>%
   dplyr::summarise(n = n()) %>%
   dplyr::mutate(total = (round(n/sum(n)*100, 1)))
 
+
+
+####
+# INTERACTIONS - CATEGORIES
+pivot <- dfR %>%
+  dplyr::group_by(items, items_uniq, p_corrected, category, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = length(start_gr)) %>%
+  dplyr::group_by(items, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = sum(total))
+
+
+
+# INTERACTIONS PERCENTAGE - ITEMS
+pivot <- dfR %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::group_by(items, type, start_gr) %>%  # remove type for two way anova
+  dplyr::summarise(total = n()) %>%
+  dplyr::mutate(per = (round(total/sum(total)*100, 1)))
+names(pivot)[3] <- "sections"
+
 # subset data
 subset.c <- pivot %>%
   dplyr::filter(type == "c")
 # add ranks to subset.c from interactions 
-subset.c <- addRank(subset.c, c.ranks)
+subset.c <- addRank(subset.c, reg.ranks)
 
 subset.u <- pivot %>%
   dplyr::filter(type == "u")
@@ -2569,6 +2789,17 @@ subset.e <- pivot %>%
   dplyr::filter(type == "e")
 # add ranks to subset.c
 subset.e <- addRank(subset.e, e.ranks)
+
+# select the section with the largest percentage of interactions 
+set.c <- subset.c %>% 
+  group_by(items) %>% top_n(1, per)
+
+set.u <- subset.u %>% 
+  group_by(items) %>% top_n(1, per)
+
+set.e <- subset.e %>% 
+  group_by(items) %>% top_n(1, per)
+
 
 # create data frame
 cols.names <- c("item", "type", "section", "total", "percentage")
