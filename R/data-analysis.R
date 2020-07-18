@@ -19,6 +19,18 @@ library(onewaytests)
 
 ### functions
 
+
+### n gram function 
+ngram <- function(x, n) {
+  # Returns a tabulation of all n-grams of x
+  k <- length(x)
+  z <- as.factor(x)
+  y <- apply(matrix(1:n, ncol=1), 1, function(i) z[i:(k-n+i)])
+  ngrams <- apply(y, 1, function(s) paste("[", paste(s, collapse=","), "]", sep=""))
+  table(as.factor(ngrams))
+}
+
+
 # find smaller than 0.05
 sigCount <- function(sigVec){
   vc.comp <- sigVec < 0.05
@@ -2922,6 +2934,85 @@ pivot <- seq.df %>%
   dplyr::group_by(items, type, rank) %>%
   dplyr::select(set1, set2, set3) %>%
   dplyr::arrange(type, rank)
+
+# -------~~ sequence analysis ngrams --------
+
+### prepare data for ngram all ALL DATA
+pivot <- df %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::select(item.number)
+
+#### sequence all items (three n grams)
+
+# call ngram function and select most frequent
+nseqs <- as.data.frame(ngram(pivot$item.number, 3)) %>%
+  dplyr::top_n(10, Freq) %>%
+  dplyr::mutate(Var1 = as.character(Var1))
+
+# separate columns 
+dseqs <- data.frame(x = c(nseqs$Var1))
+dseqs <- dseqs %>% separate(x, c(NA, "A", "B", "C"))
+dseqs$Freq <- nseqs$Freq
+
+# get items names of columns and fix data frame
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'C'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
+dseqs <- dseqs[, c(1, 3, 5, 2, 4, 6, 7)]
+names(dseqs) <- c("item.1", "item.2", "item.3", "name.1", "name.2", "name.3", "freq")
+dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+
+
+### sequence all items (four n grams)
+
+# call ngram function and select most frequent
+nseqs <- as.data.frame(ngram(pivot$item.number, 4)) %>%
+  dplyr::top_n(30, Freq) %>%
+  dplyr::mutate(Var1 = as.character(Var1))
+
+# separate columns 
+dseqs <- data.frame(x = c(nseqs$Var1))
+dseqs <- dseqs %>% separate(x, c(NA, "A", "B", "C", "D"))
+dseqs$Freq <- nseqs$Freq
+
+# get items names of columns and fix data frame
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'D'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'C'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
+dseqs <- dseqs[, c(1, 3, 5, 7, 2, 4, 6, 8, 9)]
+names(dseqs) <- c("item.1", "item.2", "item.3", "item.4", "name.1", "name.2", "name.3", "name.4", "freq")
+dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+
+
+
+###### prepare data and get n grams ITEM
+pivot <- items_around_n("oil", "reg", "bef")[[1]] %>%
+  dplyr::filter(distance > -3, distance < 0) %>%
+  dplyr::select(item_n, instance) %>%
+  dplyr::mutate(item_n = item_n - 1) %>%
+  dplyr::summarise(nseqs = paste(item_n, collapse=",")) %>%
+  dplyr::group_by(nseqs) %>%
+  dplyr::summarise(freq=n())
+
+# separate columns 
+dseqs <- data.frame(x = c(pivot$nseqs))
+dseqs <- dseqs %>% separate(x, c("A", "B"))
+dseqs$Freq <- pivot$freq
+
+# get items names of columns and fix data frame
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
+dseqs <- dseqs[, c(1, 3, 2, 4, 5)]
+names(dseqs) <- c("item.1", "item.2", "name.1", "name.2", "freq")
+dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+
+
+
+
+
+
+
 
 
 # ================ 6 PLACES ================

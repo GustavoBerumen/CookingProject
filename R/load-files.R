@@ -224,8 +224,5 @@ for (t in 1:1){
   }
 }
 
-
-
-
 #return to working directory
 setwd(dirname(home_path))

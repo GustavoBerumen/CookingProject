@@ -19,13 +19,14 @@ items_around <- function(item, session, search){
     stop(sQuote(session), "session should equal to either \"reg\" or \"new\" or \"both\" (reg and new")
   }
   
+  # set range (seconds after and before to search for items)
+  range <- 30 
+  # range <- 10 # (it was 10  for the analysis in data-analysis.R)
+  
   ### function starts here 
   
   # initialize variable to count the frequency of item of interest
   item.count <- 0
-  
-  # set range (seconds after and before to search for items)
-  range <- 10 
   
   # initialize variable to count the instance counter
   instance.counter <- 0
@@ -426,7 +427,7 @@ items_around_n <- function(item, session, search){
   return(itemsAround.ls)
 }
 
-# ================ [2.0] find group in items used in combination ================ 
+# ================ [2.0] find groups in items used in combination ================ 
 around_summary <- function(item, session, search, method){
   # search "bef" = before
   # search "aft" = after

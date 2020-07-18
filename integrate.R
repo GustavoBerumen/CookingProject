@@ -22,32 +22,3 @@ source("./R/process-items.R")
 
 # get descriptive stats of items
 source("./R/video-instances.R")
-
-### test 
-
-items.long <- c("stove", "oven", "extractorFan", "kettle", "microwave", "coffeeMachine", "riceCooker", "dishWasher",
-                "blender", "speaker", "phone", "tablet", "smartAssistant", "radio", "computer")
-
-p <- 20
-# compare items.long to items.participants
-items.match <- items.long %in% new.list[[p]]$items
-# get items.long preesent in a participant 
-items.present <- items.long[items.match]
-p
-items.present
-windows()
-test[p]
-
-### shiny app 
-
-library(shiny)
-ui <- fluidPage(sliderInput(inputId = "num",
-                            label = "Choose a number",
-                            value = 25, min = 1, max = 100),
-                            plotOutput("hist"))
-
-server <- function(input, output) {
-  output$hist <- renderPlot({hist(rnorm(input$num))})
-}
-
-shinyApp(ui = ui, server = server)
