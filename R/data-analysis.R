@@ -2935,18 +2935,50 @@ pivot <- seq.df %>%
   dplyr::select(set1, set2, set3) %>%
   dplyr::arrange(type, rank)
 
-# -------~~ sequence analysis ngrams --------
+# -------~~ sequence analysis ngrams ALL --------
 
 ### prepare data for ngram all ALL DATA
 pivot <- df %>%
   dplyr::filter(session == "reg") %>%
   dplyr::select(item.number)
 
+### prepare data for ngram all ALL DATA
+pivot <- df %>%
+  dplyr::filter(session == "reg") %>%
+  dplyr::select(item.number)
+
+
+#### sequence all items (two n grams)
+
+# call ngram function and select most frequent
+nseqs <- as.data.frame(ngram(pivot$item.number, 2)) %>%
+  #dplyr::top_n(20, Freq) %>%
+  dplyr::mutate(Var1 = as.character(Var1))
+
+# separate columns 
+dseqs <- data.frame(x = c(nseqs$Var1))
+dseqs <- dseqs %>% separate(x, c(NA, "A", "B"))
+dseqs$Freq <- nseqs$Freq
+
+# get items names of columns and fix data frame
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
+dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
+dseqs <- dseqs[, c(1, 3, 2, 4,5)]
+names(dseqs) <- c("item.1", "item.2", "name.1", "name.2", "freq")
+dseqs <- dseqs %>% dplyr::arrange(desc(freq)) %>%
+  dplyr::mutate(per = round(freq/sum(freq)*100, digits =2))
+cb(dseqs)
+
+### plot the most common sequences
+dseqs$con <- 
+
+
+
 #### sequence all items (three n grams)
 
 # call ngram function and select most frequent
 nseqs <- as.data.frame(ngram(pivot$item.number, 3)) %>%
-  dplyr::top_n(10, Freq) %>%
+  #dplyr::top_n(20, Freq) %>%
   dplyr::mutate(Var1 = as.character(Var1))
 
 # separate columns 
@@ -2960,7 +2992,9 @@ dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
 dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
 dseqs <- dseqs[, c(1, 3, 5, 2, 4, 6, 7)]
 names(dseqs) <- c("item.1", "item.2", "item.3", "name.1", "name.2", "name.3", "freq")
-dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+dseqs <- dseqs %>% dplyr::arrange(desc(freq)) %>%
+  dplyr::mutate(per = round(freq/sum(freq)*100, digits =1))
+
 
 
 ### sequence all items (four n grams)
@@ -2985,9 +3019,12 @@ names(dseqs) <- c("item.1", "item.2", "item.3", "item.4", "name.1", "name.2", "n
 dseqs <- dseqs %>% dplyr::arrange(desc(freq))
 
 
+# -------~~ sequence analysis INDIVIDUAL ITEMS --------
+
 
 ###### prepare data and get n grams ITEM
-pivot <- items_around_n("oil", "reg", "bef")[[1]] %>%
+item <- "sponge"
+pivot <- items_around_n(item, "reg", "bef")[[1]] %>%
   dplyr::filter(distance > -3, distance < 0) %>%
   dplyr::select(item_n, instance) %>%
   dplyr::group_by(instance) %>%
@@ -3005,9 +3042,28 @@ dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'B'))
 dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
 dseqs <- dseqs[, c(1, 3, 2, 4, 5)]
 names(dseqs) <- c("item.1", "item.2", "name.1", "name.2", "freq")
-dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+dseqs <- dseqs %>% dplyr::arrange(desc(freq)) %>%
+  dplyr::mutate(per = round(freq/sum(freq)*100, digits =1))
+
+print(item)
+
 
 ##### prepare function for one n gram ITEMS
+item <- "sponge"
+pivot <- items_around_n(item, "reg", "bef")[[1]] %>%
+  dplyr::filter(distance == -1) %>%
+  dplyr::select(item_n, instance) %>%
+  dplyr::group_by(instance) %>%
+  dplyr::summarise(item.number = paste(item_n, collapse=",")) %>%
+  dplyr::group_by(item.number) %>%
+  dplyr::summarise(freq=n())
+
+# get items names of columns and fix data frame
+dseqs <- (merge(items.list.n, pivot, by = 'item.number')) %>% 
+  dplyr::arrange(desc(freq)) %>% 
+  dplyr::mutate(per = round(freq/sum(freq)*100, digits =1))
+print(item)
+cb(dseqs)
 
 
 
