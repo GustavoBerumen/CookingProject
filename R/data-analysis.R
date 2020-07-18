@@ -2990,7 +2990,7 @@ dseqs <- dseqs %>% dplyr::arrange(desc(freq))
 pivot <- items_around_n("oil", "reg", "bef")[[1]] %>%
   dplyr::filter(distance > -3, distance < 0) %>%
   dplyr::select(item_n, instance) %>%
-  dplyr::mutate(item_n = item_n - 1) %>%
+  dplyr::group_by(instance) %>%
   dplyr::summarise(nseqs = paste(item_n, collapse=",")) %>%
   dplyr::group_by(nseqs) %>%
   dplyr::summarise(freq=n())
@@ -3006,6 +3006,8 @@ dseqs <- (merge(items.list.n, dseqs, by.x = 'item.number', by.y = 'A'))
 dseqs <- dseqs[, c(1, 3, 2, 4, 5)]
 names(dseqs) <- c("item.1", "item.2", "name.1", "name.2", "freq")
 dseqs <- dseqs %>% dplyr::arrange(desc(freq))
+
+##### prepare function for one n gram ITEMS
 
 
 

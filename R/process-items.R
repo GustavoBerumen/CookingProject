@@ -821,3 +821,215 @@ around_summary_singles <- function(session, search, method){
   # return data frame
   return(stats.df)
 }
+
+
+# ================ [1.0] items concurrent around according to number of items method================ 
+items_around_n <- function(item, session, search){
+  # search "bef" = before
+  # search "aft" = after
+  # search "in" in this one
+  
+  # select session
+  if (session == "reg"){
+    session.list <- reg.list
+    sessions <- 1
+  } else if (session == "new"){
+    session.list <- new.list
+    sessions <- 1
+  } else if (session == "both"){
+    session.lists <- c(reg.list, new.list)
+    sessions <- 2
+  }
+  else {
+    stop(sQuote(session), "session should equal to either \"reg\" or \"new\" or \"both\" (reg and new")
+  }
+  
+  ### function starts here 
+  
+  # initialize variable to count the frequency of item of interest
+  item.count <- 0
+  
+  # set range (seconds after and before to search for items)
+  # range <- 3
+  
+  # initialize variable to count the instance counter
+  instance.counter <- 0
+  
+  # initialize counter
+  counter <- 0 
+  
+  # initialize variable to count the row position
+  row.pos <- 0
+  
+  # initialize
+  counter <- 0 
+  
+  # create data frame to store calculations time interval
+  cols.names <- c("distance", "item_n", "order", "start_time", "end_time", "participant", "session", "instance")
+  items.df <- data.frame()
+  for (col in cols.names){items.df[[col]] <- as.numeric()}
+  # add rows -PROVISIONAL SOLUTION - find a better way
+  if(session == "both"){items.df[nrow(items.df) + 12000, ] <- NA}
+  items.df[nrow(items.df) + 4000, ] <- NA
+  
+  # set session when session is equal to both (sessions = 2)
+  for (s in 1:sessions){
+    
+    # iterate over sessions
+    if((sessions == 2) & (s == 1)){
+      session.list <- reg.list
+    }
+    else if((sessions == 2) & (s == 2)){
+      session.list <- new.list
+    }
+    # iterate over participants 
+    for (p in 1:participants){
+      
+      # find indexes of item.interest
+      item.indxs <- session.list[[p]]$`items` %>% {which(. == item)}
+      
+      # get lenght of indexs
+      len.indxs <- length(item.indxs)
+      
+      # get length of this list
+      len.list <- length(session.list[[p]]$`items`)
+      
+      # add number of item of interest indexes to item count 
+      item.count <- item.count + len.indxs
+      
+      ### check item indexes are not empty and follow TIME interval approach
+      if (len.indxs > 0){
+        
+        # iterate over indexs
+        for(index in 1:len.indxs){
+          
+          # get the position of item of interest
+          item.pos <- item.indxs[index]
+          
+          ### change to after
+          
+          #before range
+          if (search == "bef"){
+            
+            # get items n indexes before the item of interest
+            incl.items <- c(item.pos-1, item.pos-2, item.pos-3)
+            
+            # remove indexes not in indexes list
+            incl.clean <- incl.items[incl.items > 0]
+            
+            # merge item.pos and items befor 
+            to.keep <- c(incl.clean, item.pos)
+            to.keep <- sort(to.keep)
+          }
+          
+          #after range
+          if (search == "aft"){
+            
+            # get items n indexes before the item of interest
+            incl.items <- c(item.pos+1, item.pos+2, item.pos+3)
+            
+            # remove indexes not in indexes list
+            incl.clean <- incl.items[incl.items < len.list]
+            
+            # merge item.pos and items befor 
+            to.keep <- c(incl.clean, item.pos)
+            to.keep <- sort(to.keep)
+          }
+          
+          #after range
+          if (search == "in"){
+            
+            # item interest
+            item.start <- session.list[[p]]$`start`[item.pos]
+            item.end <- session.list[[p]]$`end`[item.pos]
+            
+            # get items in interval to exclude
+            right.items.excl <- which((session.list[[p]]$`start`) >  item.end)
+            left.items.excl <- which((session.list[[p]]$`start`) <  item.start)
+            
+            # combined excluded items in an object 
+            excl.items <- unique(sort(c(right.items.excl, left.items.excl)))
+            
+            # get row of items to keep
+            to.keep <- session.list[[p]]$order[!session.list[[p]]$order %in% excl.items]
+          }
+          
+          ### remove duplicates from data frame
+          items.intv <- session.list[[p]][session.list[[p]]$order %in% to.keep, ]
+          
+          ### get items distance
+          
+          # get position of item of interest within interval
+          item.int.pos <- which(items.intv$`order` == item.pos)
+          
+          # length items interval
+          len.intv <- length(items.intv$order)
+          
+          # vector with order positions for each item in items.intv
+          order.vc <- c(1:len.intv)
+          
+          # vector with relative position of items with respect to item of interest
+          rel.pos.vec <-  order.vc - item.int.pos
+          
+          # increase instance counter by 1
+          instance.counter <- instance.counter + 1
+          
+          if (len.intv > 0){
+            for (i in 1:len.intv){
+              
+              # increase counter 
+              counter <- counter + 1
+              
+              #row position
+              this.row <- row.pos + i
+              
+              #add distance
+              items.df$distance[this.row] <- rel.pos.vec[i]
+              
+              #add order
+              items.df$order[this.row] <- items.intv$`order`[i]
+              
+              # item name
+              this.item.name <- items.intv$`items`[i]
+              
+              #add item (number)
+              # items.df$item_n[this.row] <-  items.list$unique  %>% {which(. == this.item.name)}
+              items.df$item_n[this.row] <-  items.list.n$items  %>% {which(. == this.item.name)}
+              
+              #add start time
+              items.df$start_time[this.row] <- items.intv$`start`[i]
+              
+              #add end time
+              items.df$end_time[this.row] <- items.intv$`end`[i]
+              
+              #add participant
+              items.df$participant[this.row] <- items.intv$`participant`[i]
+              
+              #add session
+              items.df$session[this.row] <- items.intv$`session`[i]
+              
+              #add instance
+              items.df$instance[this.row] <- instance.counter
+              
+              #add id
+              items.df$id[this.row] <- counter
+              
+            }
+          }
+          
+          # update row position
+          row.pos <- row.pos + len.intv
+        }
+      }
+    }
+    #remove NAs from data frame
+    items.intv <- items.df[rowSums(is.na(items.df)) <7,]
+    
+    #filter data frame [remove item of interest]
+    items.intv.filter <- items.intv[items.intv$distance != 0, ]
+    
+    #non.items.intv <- non.items.df
+    itemsAround.ls <- mget(c("items.intv", "items.intv.filter"))
+  }
+  return(itemsAround.ls)
+}
