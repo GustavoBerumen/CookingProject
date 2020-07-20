@@ -3122,6 +3122,74 @@ pivot <- m.places %>%
   dplyr::group_by(type, place) %>%
   dplyr::summarise(avg = round(mean(value), digits = 1))
 
+
+# -------~~ new df places --------
+
+# prepare data for places
+three.df <- three.list %>%
+  dplyr::filter(session == "reg")
+
+# create matrix and get percentages
+df.places <- dcast(three.df, item~place_1)
+cols.mat <- length(df.places)
+for (i in seq_along(df.places$item)){
+  df.places[i, 2:cols.mat] <- round((df.places[i, 2:cols.mat]/sum(df.places[i, 2:cols.mat])*100), digits = 0)}
+
+# add type
+df.places$type <- df$type[match(df.places$item, df$items)]
+# add rank to places
+df.places$rank <- all.ranks$rank[match(df.places$item, all.ranks$items)]
+# sort data frame
+df.places <- df.places %>%
+  arrange(type, rank)
+
+# -------~~ new summary statistics --------
+
+### places per item
+pivot <- three.df %>%
+  dplyr::distinct(item, place_1) %>%
+  dplyr::group_by(item) %>%
+  dplyr::summarise(places = n()) 
+  # %>% dplyr::summarise(m = mean(places)) 
+  
+
+
+### percentage PERCENTAGE
+pivot <- three.df %>%
+  dplyr::group_by(item, place_1) %>%
+  dplyr::summarise(freq = n()) %>%
+  dplyr::mutate(avg = round(freq/sum(freq)*100, digits = 1)) %>%
+  dplyr::group_by(place_1) %>%
+  dplyr::summarise(avgP = round(sum(avg)/22, digits = 1))
+
+
+
+### percentage place RAW COUNT
+pivot <- three.df %>%
+  # dplyr::filter(item == "salt") %>%
+  dplyr::group_by(place_1) %>%
+  # dplyr::group_by(item, place_1) %>%
+  dplyr::summarise(freq = n()) %>%
+  dplyr::mutate(avg = round( freq/sum(freq)*100, digits = 1)) %>%
+  dplyr::arrange(desc(avg))
+
+
+####### plot places items are used (RAW COUNT)
+pivot$place_1 <- c("counter", "stove", "sink", "cup board", "fridge", "table", "floor")
+# 
+# pivot$place_1 <- c("counter", "cup-board", "stove")
+
+
+ggplot(pivot, aes(x = reorder(place_1, -avg), y = avg, fill = place_1)) +
+  geom_bar(stat="identity", position = "dodge") + 
+  ggtitle("Places of interaction") +
+  xlab("Places") + ylab("Percentage (%)") + labs(subtitle = "CPG's selected items") + 
+  theme(legend.position = "none")
+  
+
+
+
+
 # ================ 7 FORMS ================
 # -------~~ prepare data --------
 

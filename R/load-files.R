@@ -103,7 +103,6 @@ new.list.concat$session <- "new"
 # merge data frames
 reg.new.concat <- rbind(reg.list.concat,  new.list.concat)
 
-
 #get time list
 ### create data frame to store calculations
 cols.names <-  c("id", "reg", "new") # names of columns 
@@ -174,12 +173,11 @@ reg.new.con.cat <- reg.new.con.cat[, c(3, 2, 1,4:5, 14, 6:9, 11:12, 13, 10)]
 
 
 ### load files of three data (place, form, and activities)
-# create data frame to add data
+
 ### create data frame to store calculations
 cols.names <-  c("p", "session", "place_1", "place_2", "activity_1", "activity_2", "form_1", "form_2", "item", "type") # names of columns 
 three.list <- data.frame()
 for (col in cols.names){three.list[[col]] <- as.numeric()}
-
 # define cols to subset 
 ncols <- c(2, 3, 9:14)
 
@@ -197,7 +195,6 @@ for (t in 1:1){
   # get list of items
   three_list <- list.files(path = three_path, pattern = ".xlsx", full.names = TRUE)
   
-  
   # assign files to data frame
   for (i in 1:length(three_list)){
     
@@ -214,7 +211,7 @@ for (t in 1:1){
     temp_dfS <- temp_df[1:pos_NA, ncols]
     
     # add item name
-    temp_dfS$item <-  temp_item
+    temp_dfS$item <- temp_item
     temp_dfS$typ <- type
     
     # add data bottom of data frame 
@@ -223,6 +220,12 @@ for (t in 1:1){
     three.list[c(s_r: e_r), ] <- temp_dfS
   }
 }
+# change columns positions
+three.list <- three.list[c(9, 10, 2, 1, 3:8)]
+
+
+
 
 #return to working directory
-setwd(dirname(home_path))
+setwd("C:/Users/LPXJGB/Desktop/CHI-2020/CookingProject")
+# setwd(dirname(home_path))
