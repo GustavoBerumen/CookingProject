@@ -2516,6 +2516,20 @@ ggboxplot(pivot, x = "sections", y = "total", fill = "sections", add = "jitter")
 
 ####### SELECT COLUMNS / FIRST APPEARANCE OF ITEMS 
 
+# -------~~ items first time --------
+
+####### GROUPING
+
+pivot <- dfR %>%
+  dplyr::distinct(items, type, session, participant, start_gr) %>%
+  dplyr::group_by(type, participant, start_gr, session) %>%
+  dplyr::summarise(total = length(start_gr)) %>%
+  dplyr::filter(session == "reg") 
+names(pivot)[3] <- "sections"
+# sort data frame
+pivot[order(pivot$session, decreasing = TRUE), ]
+
+
 # prepare data frame for FIRST
 pivot <- dfR %>%
   dplyr::filter(session == "reg") %>%
@@ -2537,9 +2551,7 @@ names(pivotA)[2] <- "sections"
 # all anova
 all.aov <- one_anova(pivotA, 2)
 
-# plot anova
-my_comparisons <-  list(c("1", "2"),  c("1", "3"))
-
+#plot
 ggboxplot(pivotA, x = "sections", y = "total", fill = "sections", add = "jitter") +
   scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))  +
   ggtitle("Items used for the first time") +
@@ -2548,26 +2560,100 @@ ggboxplot(pivotA, x = "sections", y = "total", fill = "sections", add = "jitter"
   geom_signif(comparisons = my_comparisons[2], y_position = 60, map_signif_level=TRUE,  tip_length = 0) +
   geom_signif(comparisons = my_comparisons[1], y_position = 50, map_signif_level=TRUE, tip_length = 0)
 
-### PLOT DOTTED LINE
+##################### PLOT DOTTED LINE
+
+# -------~~ results implications --------
+
+
 # prepare data frame for FIRST
 pivot <- dfR %>%
   dplyr::filter(session == "reg") %>%
-  dplyr::select(items, type, start, participant)
+  dplyr::select(items, type, start, participant) %>%
+  dplyr::mutate(start = replace(start, start==0, 2))
 
 ### select first appearance of items 
 pivotFirst <- pivot %>%
   dplyr::group_by(items, type, participant) %>% 
-  dplyr::filter(row_number()==1) %>% 
+  dplyr::filter(type == "c") %>% 
+  dplyr::filter(row_number() == 1) %>% 
   dplyr::mutate(minute = ceiling(start/60)) %>%
+  dplyr::mutate(minute = replace(minute, minute %% 2 > 0, minute+1)) %>% # make tick marks every two minutes
   dplyr::group_by(minute) %>%
-  dplyr::summarise(total = length(minute))
+  dplyr::summarise(total = length(minute)) %>% 
+  dplyr::mutate(per = round(total/sum(total)*100, digits =1)) %>%
+  dplyr::mutate(cum = round(cumsum(100*per/sum(per)), digits =1))
+  
+  
+### plot items start time
+ggplot(pivotFirst, aes(x=minute, y=per)) +
+  geom_bar(stat="identity")  +
+  ggtitle("Items' first interaction") +
+  scale_x_continuous(breaks=seq(0, 110, 10)) +
+  xlab("time (minutes)") + ylab("number of items") + labs(subtitle = "all items") +
+  theme(legend.position = "right") 
+
+
+### plot cumulative frequency 
 
 ### plot items start time
-ggplot(pivotFirst, aes(x=minute, y=total)) +
-  geom_bar(stat="identity")  +
-  ggtitle("Item used for the first time") +
-  xlab("minute") + ylab("number of items used for the first time") + labs(subtitle = "all participants") +
-  theme(legend.position = "right") 
+pivotFirst <- as.data.frame(pivotFirst)
+pivotFirst[nrow(pivotFirst) + 1, ] = c(0 , 0, 0, 0)
+
+
+ggplot(pivotFirst, aes(x=minute, y=cum)) +
+  geom_point() +
+  ggtitle("Items' first interaction") +
+  scale_x_continuous(breaks=seq(0, 100, 10)) +
+  #ylim(c(0, 100)) +
+  xlab("time (minutes)") + ylab("items interacted (percentage)") + labs(subtitle = "CPGs") +
+  theme(legend.position = "right") +
+  geom_hline(yintercept=50, linetype="dashed")
+### 
+
+
+# pareto chart
+
+install.packages("ggQC")
+library(ggQC)
+require(ggQC)
+
+# Render Pareto Plot ------------------------------------------------------
+
+pivot <- as.data.frame(pivotFirst)
+pivot$minute <- as.factor(pivot$minute)
+
+ggplot(pivot, aes(x=minute, y= per)) +
+  stat_pareto(point.color = "red",
+              point.size = 3,
+              line.color = "black",
+              #size.line = 1,
+              bars.fill = c("blue", "orange"))
+
+
+
+# Setup Data --------------------------------------------------------------
+df <- data.frame(
+  x = letters[1:10],
+  y = as.integer(runif(n = 10, min = 0, max=100))
+)
+
+# Render Pareto Plot ------------------------------------------------------
+
+
+ggplot(df, aes(x=x, y=y)) +
+  stat_pareto(point.color = "red",
+              point.size = 3,
+              line.color = "black",
+              #size.line = 1,
+              bars.fill = c("blue", "orange"),
+  )
+
+
+
+
+
+
+
 
 
 ggplot(data = pivotFirst, aes(x=minute, y=total)) +
